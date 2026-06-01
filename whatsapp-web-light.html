@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp (Light)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-deep:       #efeae2;
+    --bg-sidebar:    #ffffff;
+    --bg-panel:      #f0f2f5;
+    --bg-input:      #f0f2f5;
+    --bg-sent:       #d9fdd3;
+    --bg-recv:       #ffffff;
+    --bg-hover:      #f5f6f6;
+    --accent:        #25d366;
+    --accent-dark:   #128c7e;
+    --text-primary:  #111b21;
+    --text-secondary:#54656f;
+    --divider:       #e9edef;
+    --icon-color:    #54656f;
+    --tick-blue:     #53bdeb;
+    --font:          'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  html, body { height: 100%; background: var(--bg-deep); font-family: var(--font); overflow: hidden; }
+  #app { display: flex; height: 100vh; width: 100%; max-width: 1600px; margin: 0 auto; }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: 420px; min-width: 320px; max-width: 420px;
+    display: flex; flex-direction: column;
+    background: var(--bg-sidebar); border-right: 1px solid var(--divider);
+  }
+  #sidebar-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; background: var(--bg-panel); height: 60px;
+  }
+  #my-avatar {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 600; color: #fff; cursor: pointer; user-select: none; flex-shrink: 0;
+  }
+  .header-icons { display: flex; gap: 6px; }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 50%; background: none; border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.15s; color: var(--icon-color);
+  }
+  .icon-btn:hover { background: var(--bg-hover); }
+  #search-wrap { padding: 8px 12px; background: var(--bg-sidebar); }
+  #search-inner {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg-input); border-radius: 8px; padding: 0 12px; height: 35px;
+  }
+  #search-inner svg { flex-shrink: 0; color: var(--text-secondary); }
+  #search-input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text-primary); font-size: 15px; font-family: var(--font); caret-color: var(--accent);
+  }
+  #search-input::placeholder { color: var(--text-secondary); }
+  #filter-tabs {
+    display: flex; gap: 8px; padding: 4px 12px 8px;
+    background: var(--bg-sidebar); overflow-x: auto; scrollbar-width: none;
+  }
+  #filter-tabs::-webkit-scrollbar { display: none; }
+  .filter-tab {
+    flex-shrink: 0; padding: 5px 12px; border-radius: 16px; border: none;
+    font-size: 13px; font-family: var(--font); cursor: pointer;
+    transition: background 0.15s, color 0.15s; background: var(--bg-input); color: var(--text-secondary);
+  }
+  .filter-tab.active { background: rgba(37,211,102,0.12); color: var(--accent); }
+  #chat-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--bg-input) transparent; }
+  #chat-list::-webkit-scrollbar { width: 6px; }
+  #chat-list::-webkit-scrollbar-thumb { background: var(--bg-input); border-radius: 3px; }
+  .chat-item {
+    display: flex; align-items: center; padding: 10px 16px; gap: 12px;
+    cursor: pointer; transition: background 0.1s; position: relative;
+  }
+  .chat-item:hover { background: var(--bg-hover); }
+  .chat-item.selected { background: var(--bg-input); }
+  .chat-item.selected::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent);
+  }
+  .chat-avatar {
+    width: 49px; height: 49px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 600; color: #fff; flex-shrink: 0;
+  }
+  .chat-body { flex: 1; min-width: 0; }
+  .chat-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+  .chat-name {
+    font-size: 16px; color: var(--text-primary); font-weight: 400;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
+  }
+  .chat-time { font-size: 12px; color: var(--text-secondary); flex-shrink: 0; margin-left: 8px; }
+  .chat-item.unread .chat-time { color: var(--accent); }
+  .chat-bottom { display: flex; justify-content: space-between; align-items: center; }
+  .chat-preview {
+    font-size: 14px; color: var(--text-secondary); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; max-width: 260px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .unread-badge {
+    min-width: 20px; height: 20px; background: var(--accent); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: #fff; padding: 0 5px; flex-shrink: 0;
+  }
+
+  /* ── MAIN ── */
+  #main {
+    flex: 1; display: flex; flex-direction: column;
+    background: var(--bg-deep); position: relative; overflow: hidden;
+    transition: flex 0.22s cubic-bezier(0.2,0,0,1);
+  }
+  #main::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c9bfaa'%3E%3Cpath d='M10 10 Q15 5 20 10 Q15 15 10 10z' opacity='.4'/%3E%3Cpath d='M50 30 Q55 25 60 30 Q55 35 50 30z' opacity='.3'/%3E%3Cpath d='M90 15 Q95 10 100 15 Q95 20 90 15z' opacity='.35'/%3E%3Cpath d='M140 25 Q145 20 150 25 Q145 30 140 25z' opacity='.4'/%3E%3Cpath d='M180 10 Q185 5 190 10 Q185 15 180 10z' opacity='.3'/%3E%3Cpath d='M230 20 Q235 15 240 20 Q235 25 230 20z' opacity='.35'/%3E%3Cpath d='M270 8 Q275 3 280 8 Q275 13 270 8z' opacity='.4'/%3E%3Cpath d='M30 60 Q35 55 40 60 Q35 65 30 60z' opacity='.35'/%3E%3Cpath d='M70 50 Q75 45 80 50 Q75 55 70 50z' opacity='.4'/%3E%3Cpath d='M200 60 Q205 55 210 60 Q205 65 200 60z' opacity='.35'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 400px 400px; opacity: 0.5; pointer-events: none; z-index: 0;
+  }
+  #chat-header {
+    display: flex; align-items: center; padding: 10px 16px;
+    background: var(--bg-panel); height: 60px; gap: 12px;
+    z-index: 10; position: relative; border-bottom: 1px solid var(--divider);
+  }
+  #active-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 600; color: #fff;
+    flex-shrink: 0; cursor: pointer;
+  }
+  #contact-info { flex: 1; cursor: pointer; min-width: 0; }
+  #contact-name { font-size: 16px; color: var(--text-primary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #contact-status { font-size: 13px; color: var(--text-secondary); margin-top: 1px; }
+  .chat-header-icons { display: flex; gap: 4px; }
+  #messages {
+    flex: 1; overflow-y: auto; padding: 12px 6% 12px;
+    display: flex; flex-direction: column; gap: 2px;
+    position: relative; z-index: 1;
+    scrollbar-width: thin; scrollbar-color: var(--bg-input) transparent;
+  }
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 2px; }
+  .date-separator { display: flex; align-items: center; justify-content: center; margin: 10px 0; }
+  .date-chip {
+    background: rgba(17,27,33,0.06); color: var(--text-secondary); font-size: 12.5px;
+    padding: 5px 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+  .msg-row { display: flex; margin: 1px 0; }
+  .msg-row.sent { justify-content: flex-end; }
+  .msg-row.recv { justify-content: flex-start; }
+  .bubble {
+    max-width: 65%; min-width: 80px; padding: 6px 7px 8px 9px;
+    border-radius: 7.5px; position: relative; word-break: break-word;
+    box-shadow: 0 1px 2px rgba(0,0,0,.1);
+  }
+  .msg-row.sent .bubble  { background: var(--bg-sent); border-top-right-radius: 0; }
+  .msg-row.recv .bubble  { background: var(--bg-recv); border-top-left-radius: 0; }
+  .msg-row.sent .bubble::after {
+    content: ''; position: absolute; top: 0; right: -8px;
+    width: 0; height: 0; border-style: solid;
+    border-width: 0 0 8px 8px; border-color: transparent transparent transparent var(--bg-sent);
+  }
+  .msg-row.recv .bubble::before {
+    content: ''; position: absolute; top: 0; left: -8px;
+    width: 0; height: 0; border-style: solid;
+    border-width: 0 8px 8px 0; border-color: transparent var(--bg-recv) transparent transparent;
+  }
+  .bubble-text { font-size: 14.2px; color: var(--text-primary); line-height: 1.45; padding-right: 48px; }
+  .bubble-meta {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 3px; margin-top: -6px; float: right; clear: both; margin-left: 8px;
+  }
+  .msg-time { font-size: 11px; color: rgba(17,27,33,0.45); white-space: nowrap; }
+  .msg-row.recv .msg-time { color: var(--text-secondary); }
+  .tick { display: flex; align-items: center; }
+  .msg-row.sent + .msg-row.recv, .msg-row.recv + .msg-row.sent { margin-top: 6px; }
+  .bubble.emoji-only .bubble-text { font-size: 32px; padding-right: 48px; line-height: 1.2; }
+  #input-area {
+    display: flex; align-items: flex-end; padding: 8px 16px 10px; gap: 10px;
+    background: var(--bg-panel); position: relative; z-index: 10;
+  }
+  #input-wrap {
+    flex: 1; display: flex; align-items: flex-end;
+    background: var(--bg-input); border-radius: 10px; padding: 6px 10px; gap: 8px; min-height: 42px;
+  }
+  #msg-input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text-primary); font-size: 15px; font-family: var(--font);
+    resize: none; max-height: 140px; overflow-y: auto; line-height: 1.5;
+    caret-color: var(--accent); padding: 3px 0;
+  }
+  #msg-input::placeholder { color: var(--text-secondary); }
+  .input-icon-btn {
+    background: none; border: none; cursor: pointer; color: var(--icon-color);
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%; transition: color 0.15s; flex-shrink: 0;
+  }
+  .input-icon-btn:hover { color: var(--text-primary); }
+  #send-btn {
+    width: 42px; height: 42px; border-radius: 50%; background: var(--accent); border: none;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.15s, transform 0.1s;
+    box-shadow: 0 2px 8px rgba(37,211,102,.25);
+  }
+  #send-btn:hover { background: var(--accent-dark); }
+  #send-btn:active { transform: scale(0.94); }
+  #send-btn svg { color: #fff; }
+  #welcome {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px;
+    z-index: 1; position: relative; text-align: center;
+  }
+  #welcome h2 { font-size: 32px; color: var(--text-primary); font-weight: 300; opacity: 0.9; }
+  #welcome p { font-size: 14px; color: var(--text-secondary); max-width: 360px; line-height: 1.7; }
+  #welcome-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.6; } }
+  .typing-indicator { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+  .typing-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--text-secondary);
+    animation: typingBounce 1.2s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes typingBounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+  #emoji-picker {
+    position: absolute; bottom: 65px; left: 16px;
+    background: var(--bg-panel); border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.5); padding: 12px;
+    display: none; z-index: 100; width: 320px; border: 1px solid var(--divider);
+  }
+  #emoji-picker.open { display: block; animation: popUp 0.15s ease; }
+  @keyframes popUp { from { opacity:0; transform:scale(0.95) translateY(8px); } to { opacity:1; transform:none; } }
+  .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
+  .emoji-btn {
+    background: none; border: none; font-size: 22px; cursor: pointer;
+    padding: 6px; border-radius: 6px; transition: background 0.12s; text-align: center;
+  }
+  .emoji-btn:hover { background: var(--bg-hover); }
+  @keyframes fadeSlideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .msg-row.new { animation: fadeSlideIn 0.18s ease forwards; }
+  .status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    position: absolute; bottom: 1px; right: 1px; border: 2px solid var(--bg-panel);
+  }
+  .status-dot.online  { background: var(--accent); }
+  .status-dot.away    { background: #f0c047; }
+  .avatar-wrap { position: relative; flex-shrink: 0; }
+  .back-btn { display: none; }
+  @media (max-width: 768px) {
+    #sidebar { width: 100%; max-width: 100%; }
+    #main { display: none; }
+    #sidebar.hide { display: none; }
+    #main.show { display: flex; width: 100%; }
+    #chat-header .back-btn { display: flex !important; }
+    #profile-panel.open { width: 100%; min-width: 100%; position: absolute; z-index: 20; }
+  }
+
+  /* ── PROFILE PANEL ── */
+  #profile-panel {
+    width: 0; min-width: 0; overflow: hidden;
+    background: var(--bg-sidebar);
+    border-left: 1px solid var(--divider);
+    display: flex; flex-direction: column;
+    transition: width 0.22s cubic-bezier(0.2,0,0,1), min-width 0.22s cubic-bezier(0.2,0,0,1);
+  }
+  #profile-panel.open { width: 420px; min-width: 420px; }
+  #profile-inner {
+    width: 420px; height: 100%; overflow-y: auto;
+    display: flex; flex-direction: column;
+    scrollbar-width: thin; scrollbar-color: var(--bg-input) transparent;
+  }
+  #profile-inner::-webkit-scrollbar { width: 4px; }
+  #profile-inner::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
+
+  /* Profile header */
+  #profile-panel-header {
+    display: flex; align-items: center; gap: 20px; padding: 0 6px 0 4px;
+    height: 60px; background: var(--bg-panel); flex-shrink: 0;
+    border-bottom: 1px solid var(--divider);
+  }
+  #profile-panel-title { font-size: 16px; color: var(--text-primary); font-weight: 400; }
+
+  /* Hero */
+  #profile-hero {
+    background: var(--bg-panel); padding: 24px 20px 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    flex-shrink: 0;
+  }
+  .prof-av-xl {
+    width: 200px; height: 200px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 72px; font-weight: 600; color: #fff;
+    position: relative; cursor: pointer; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4); flex-shrink: 0;
+  }
+  .prof-av-xl .av-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,.45);
+    border-radius: 50%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .prof-av-xl:hover .av-overlay { opacity: 1; }
+  .av-overlay span { font-size: 13px; color: #fff; font-weight: 500; letter-spacing: 0.3px; }
+  #prof-name { font-size: 24px; font-weight: 500; color: var(--text-primary); text-align: center; margin-top: 4px; }
+  #prof-sub  { font-size: 14px; color: var(--text-secondary); text-align: center; }
+
+  /* Sections */
+  .prof-section { background: var(--bg-panel); margin-top: 10px; flex-shrink: 0; }
+  .prof-section-label {
+    padding: 14px 20px 4px; font-size: 13px; color: var(--accent);
+  }
+  .prof-about-text {
+    padding: 4px 20px 14px; font-size: 15px; color: var(--text-primary); line-height: 1.5;
+  }
+
+  /* Info rows (phone, email) */
+  .prof-info-row {
+    display: flex; align-items: center; gap: 16px; padding: 12px 20px;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .prof-info-row:last-child { border-bottom: none; }
+  .prof-info-icon { color: var(--text-secondary); display: flex; flex-shrink: 0; }
+  .prof-info-body { flex: 1; }
+  .prof-info-val { font-size: 15px; color: var(--text-primary); }
+  .prof-info-lbl { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .prof-copy-btn {
+    background: none; border: none; cursor: pointer; color: var(--text-secondary);
+    display: flex; padding: 6px; border-radius: 50%; transition: background 0.12s, color 0.12s;
+  }
+  .prof-copy-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+  /* Media grid */
+  .prof-media-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px 10px;
+  }
+  .prof-media-header-left { display: flex; align-items: center; gap: 8px; }
+  .prof-media-title { font-size: 15px; color: var(--text-primary); }
+  .prof-media-count {
+    font-size: 13px; color: var(--text-secondary);
+    background: var(--bg-input); padding: 2px 8px; border-radius: 10px;
+  }
+  .prof-media-see-all {
+    background: none; border: none; cursor: pointer; color: var(--text-secondary);
+    display: flex; align-items: center; gap: 4px; font-size: 13px;
+    font-family: var(--font); transition: color 0.12s;
+  }
+  .prof-media-see-all:hover { color: var(--text-primary); }
+  .prof-media-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px;
+    padding: 0 0 4px;
+  }
+  .media-thumb {
+    aspect-ratio: 1; overflow: hidden; cursor: pointer; transition: filter 0.15s;
+    background-size: cover; background-position: center;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .media-thumb:hover { filter: brightness(0.8); }
+  .media-thumb.more-overlay {
+    position: relative; background: rgba(0,0,0,.6);
+  }
+  .media-thumb.more-overlay::after {
+    content: attr(data-more); position: absolute; inset: 0;
+    background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 600; color: #fff;
+  }
+
+  /* Toggle rows */
+  .prof-toggle-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px 20px; cursor: pointer; transition: background 0.12s;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .prof-toggle-row:last-child { border-bottom: none; }
+  .prof-toggle-row:hover { background: var(--bg-hover); }
+  .prof-toggle-icon { color: var(--text-secondary); display: flex; flex-shrink: 0; }
+  .prof-toggle-body { flex: 1; }
+  .prof-toggle-label { font-size: 15px; color: var(--text-primary); }
+  .prof-toggle-sub { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .toggle-switch {
+    width: 44px; height: 24px; background: var(--bg-input); border-radius: 12px;
+    position: relative; cursor: pointer; transition: background 0.2s; border: none; flex-shrink: 0;
+  }
+  .toggle-switch.on { background: var(--accent); }
+  .toggle-switch::after {
+    content: ''; position: absolute; width: 18px; height: 18px; background: #fff;
+    border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+  .toggle-switch.on::after { transform: translateX(20px); }
+  .prof-arrow { color: var(--text-secondary); display: flex; }
+
+  /* Members */
+  .prof-members-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px 8px;
+  }
+  .prof-members-title { font-size: 15px; color: var(--text-primary); }
+  .prof-members-count {
+    font-size: 13px; color: var(--text-secondary);
+    background: var(--bg-input); padding: 2px 8px; border-radius: 10px;
+  }
+  .prof-member-search {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg-input); border-radius: 8px;
+    padding: 6px 12px; margin: 0 16px 8px; height: 34px;
+  }
+  .prof-member-search input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text-primary); font-size: 14px; font-family: var(--font); caret-color: var(--accent);
+  }
+  .prof-member-search input::placeholder { color: var(--text-secondary); }
+  .add-member-row {
+    display: flex; align-items: center; gap: 14px; padding: 10px 20px;
+    cursor: pointer; transition: background 0.12s;
+  }
+  .add-member-row:hover { background: var(--bg-hover); }
+  .add-member-icon {
+    width: 46px; height: 46px; border-radius: 50%; background: var(--accent);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .add-member-label { font-size: 15px; color: var(--text-primary); }
+  .member-row {
+    display: flex; align-items: center; gap: 14px; padding: 10px 20px;
+    cursor: pointer; transition: background 0.12s; position: relative;
+  }
+  .member-row:hover { background: var(--bg-hover); }
+  .member-av {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 600; color: #fff; flex-shrink: 0;
+  }
+  .member-body { flex: 1; min-width: 0; }
+  .member-name { font-size: 15px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .member-phone { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .member-badge {
+    font-size: 11px; color: var(--accent); padding: 2px 7px;
+    border: 1px solid rgba(0,168,132,.5); border-radius: 4px; flex-shrink: 0;
+  }
+
+  /* Danger rows */
+  .prof-danger-row {
+    display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+    cursor: pointer; transition: background 0.12s; background: var(--bg-panel);
+    margin-top: 10px; border: none; width: 100%; font-family: var(--font);
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .prof-danger-row:last-child { border-bottom: none; }
+  .prof-danger-row:hover { background: var(--bg-hover); }
+  .prof-danger-row span { font-size: 15px; color: #f15c6d; }
+
+  /* ── CALL BUBBLE ── */
+  .call-bubble {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px 10px 10px; min-width: 220px;
+  }
+  .call-icon-wrap {
+    width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .call-icon-wrap.answered { background: rgba(0,168,132,.18); }
+  .call-icon-wrap.missed   { background: rgba(241,92,109,.18); }
+  .call-details { flex: 1; }
+  .call-label { font-size: 15px; color: var(--text-primary); margin-bottom: 3px; }
+  .call-label.missed-lbl { color: #f15c6d; }
+  .call-meta-row { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); }
+  .call-arrow { display: flex; }
+  .call-callback-btn {
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 50%;
+    transition: background 0.15s; flex-shrink: 0;
+  }
+  .call-callback-btn:hover { background: rgba(255,255,255,.08); }
+
+  /* ── AUDIO BUBBLE ── */
+  .audio-bubble {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px 8px 8px; min-width: 240px;
+  }
+  .audio-play-btn {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--accent); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .audio-play-btn:hover { background: var(--accent-dark); }
+  .audio-play-btn svg { color: #fff; }
+  .audio-body { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+  .audio-waveform {
+    display: flex; align-items: center; gap: 2px; height: 30px; cursor: pointer;
+  }
+  .wv-bar {
+    width: 3px; border-radius: 2px; background: rgba(255,255,255,.25);
+    transition: background 0.15s;
+  }
+  .wv-bar.played { background: var(--accent); }
+  .audio-footer { display: flex; align-items: center; justify-content: space-between; }
+  .audio-duration { font-size: 12px; color: var(--text-secondary); }
+  .audio-avatar-small {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: #fff; flex-shrink: 0;
+  }
+
+  /* ── IMAGE BUBBLE ── */
+  .img-bubble { padding: 4px 4px 0 4px; min-width: 200px; max-width: 320px; }
+  .img-bubble-inner {
+    border-radius: 6px; overflow: hidden; position: relative; cursor: pointer;
+  }
+  .img-bubble-inner:hover .img-overlay { opacity: 1; }
+  .img-placeholder {
+    width: 100%; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center;
+    font-size: 40px; background-size: cover; background-position: center;
+  }
+  .img-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,.35);
+    display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s;
+  }
+  .img-overlay svg { color: #fff; }
+  .img-caption {
+    font-size: 14px; color: var(--text-primary); line-height: 1.4;
+    padding: 5px 8px 0; word-break: break-word;
+  }
+  .img-meta-row { display: flex; justify-content: flex-end; align-items: center; gap: 3px; padding: 2px 6px 6px; }
+
+  /* ── VIDEO BUBBLE ── */
+  .vid-bubble { padding: 4px 4px 0 4px; min-width: 220px; max-width: 320px; }
+  .vid-bubble-inner {
+    border-radius: 6px; overflow: hidden; position: relative; cursor: pointer;
+  }
+  .vid-placeholder {
+    width: 100%; aspect-ratio: 16/9;
+    display: flex; align-items: center; justify-content: center;
+    background-size: cover; background-position: center; position: relative;
+  }
+  .vid-play-circle {
+    width: 52px; height: 52px; border-radius: 50%; background: rgba(0,0,0,.55);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .vid-bubble-inner:hover .vid-play-circle { background: rgba(0,0,0,.75); }
+  .vid-play-circle svg { color: #fff; margin-left: 3px; }
+  .vid-duration-badge {
+    position: absolute; bottom: 8px; right: 10px;
+    background: rgba(0,0,0,.55); color: #fff; font-size: 12px;
+    padding: 2px 6px; border-radius: 4px;
+  }
+  .vid-meta-row { display: flex; justify-content: flex-end; align-items: center; gap: 3px; padding: 4px 6px 6px; }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 90px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #3b4a54; color: var(--text-primary); padding: 8px 18px;
+    border-radius: 8px; font-size: 14px; box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 999;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .msg-row.recv .bubble { border: 1px solid #e9edef; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ SIDEBAR ══ -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <div id="my-avatar" title="Profile">Y</div>
+      <div class="header-icons">
+        <button class="icon-btn" title="Communities" onclick="showToast('Communities coming soon')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="17" cy="7" r="3"/><circle cx="7" cy="7" r="3"/>
+            <path d="M1 21v-2a4 4 0 014-4h4M13 21v-2a4 4 0 014-4h4M8 21v-2a4 4 0 014-4h0a4 4 0 014 4v2"/>
+          </svg>
+        </button>
+        <button class="icon-btn" title="New chat" onclick="showToast('Start a new chat')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            <line x1="12" y1="8" x2="12" y2="14"/><line x1="9" y1="11" x2="15" y2="11"/>
+          </svg>
+        </button>
+        <button class="icon-btn" title="Menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div id="search-wrap">
+      <div id="search-inner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input id="search-input" type="text" placeholder="Search or start new chat" oninput="filterChats(this.value)">
+      </div>
+    </div>
+    <div id="filter-tabs">
+      <button class="filter-tab active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-tab" onclick="setFilter('unread',this)">Unread</button>
+      <button class="filter-tab" onclick="setFilter('favorites',this)">Favorites</button>
+      <button class="filter-tab" onclick="setFilter('groups',this)">Groups</button>
+    </div>
+    <div id="chat-list"></div>
+  </div>
+
+  <!-- ══ MAIN ══ -->
+  <div id="main">
+    <div id="chat-header" style="display:none">
+      <button class="icon-btn back-btn" onclick="goBack()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="avatar-wrap">
+        <div id="active-avatar" onclick="openProfile()"></div>
+        <div id="active-status-dot" class="status-dot"></div>
+      </div>
+      <div id="contact-info" onclick="openProfile()">
+        <div id="contact-name"></div>
+        <div id="contact-status"></div>
+      </div>
+      <div class="chat-header-icons">
+        <button class="icon-btn" title="Video call" onclick="showToast('Video call started')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          </svg>
+        </button>
+        <button class="icon-btn" title="Voice call" onclick="showToast('Calling...')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/>
+          </svg>
+        </button>
+        <button class="icon-btn" title="Search in chat" onclick="showToast('Search in conversation')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
+        <button class="icon-btn" title="More options">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="welcome">
+      <svg width="220" height="188" viewBox="0 0 320 188" fill="none" style="opacity:.12">
+        <ellipse cx="160" cy="94" rx="140" ry="80" stroke="#00a884" stroke-width="2" fill="none"/>
+        <circle cx="160" cy="94" r="40" fill="#00a884" opacity="0.15"/>
+        <path d="M140 94 Q160 74 180 94 Q160 114 140 94z" fill="#00a884" opacity="0.5"/>
+      </svg>
+      <h2>WhatsApp Web</h2>
+      <p>Send and receive messages without keeping your phone online.<br>Use WhatsApp on up to 4 linked devices and 1 phone at the same time.</p>
+      <div id="welcome-dot"></div>
+    </div>
+
+    <div id="messages" style="display:none"></div>
+
+    <div id="input-area" style="display:none">
+      <div id="emoji-picker"><div class="emoji-grid" id="emoji-grid"></div></div>
+      <div id="input-wrap">
+        <button class="input-icon-btn" id="emoji-toggle-btn" title="Emoji" onclick="toggleEmoji()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+          </svg>
+        </button>
+        <button class="input-icon-btn" title="Attach" onclick="showToast('Choose a file to attach')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+          </svg>
+        </button>
+        <textarea id="msg-input" rows="1" placeholder="Type a message" oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+      </div>
+      <button id="send-btn" onclick="sendMessage()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ PROFILE PANEL ══ -->
+  <div id="profile-panel">
+    <div id="profile-inner">
+
+      <!-- Header -->
+      <div id="profile-panel-header">
+        <button class="icon-btn" onclick="closeProfile()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        <span id="profile-panel-title">Contact info</span>
+      </div>
+
+      <!-- Hero -->
+      <div id="profile-hero">
+        <div class="prof-av-xl" id="prof-av-xl" onclick="showToast('Change profile photo')">
+          <span id="prof-av-initials"></span>
+          <div class="av-overlay">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8">
+              <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            <span>Change photo</span>
+          </div>
+        </div>
+        <div id="prof-name"></div>
+        <div id="prof-sub"></div>
+      </div>
+
+      <!-- Dynamic content -->
+      <div id="profile-content"></div>
+
+    </div>
+  </div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+// ── COLORS & UTILS ─────────────────────────────
+const COLORS = ['#d9343a','#e07b39','#c38e30','#4caf80','#5b8cdb','#8b70c0','#e05a85','#00a884','#f4657a','#43b6c7'];
+const color    = n => COLORS[n.split('').reduce((a,c)=>a+c.charCodeAt(0),0) % COLORS.length];
+const initials = n => n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+const now = new Date();
+const hm = (h,m) => { const d=new Date(now); d.setHours(h,m,0,0); return d; };
+const daysAgo = n => { const d=new Date(now); d.setDate(d.getDate()-n); return d; };
+
+const fmtMsgTime  = d => d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true}).replace(' ','').toLowerCase();
+const fmtChatTime = d => {
+  const t=new Date(); t.setHours(0,0,0,0);
+  const m=new Date(d); m.setHours(0,0,0,0);
+  const diff=(t-m)/86400000;
+  if(diff<1) return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true}).replace(' ','').toLowerCase();
+  if(diff<2) return 'Yesterday';
+  if(diff<7) return d.toLocaleDateString('en-US',{weekday:'short'});
+  return d.toLocaleDateString('en-US',{month:'numeric',day:'numeric',year:'2-digit'});
+};
+
+// ── MEDIA THUMBNAIL GRADIENTS ──────────────────
+const THUMBS = [
+  'linear-gradient(135deg,#1a6b5a,#2eb872)','linear-gradient(135deg,#5b2c6f,#a569bd)',
+  'linear-gradient(135deg,#1a3a5c,#2e86c1)','linear-gradient(135deg,#7d6608,#d4ac0d)',
+  'linear-gradient(135deg,#922b21,#e74c3c)','linear-gradient(135deg,#1e8449,#58d68d)',
+  'linear-gradient(135deg,#1b4f72,#5dade2)','linear-gradient(135deg,#6c3483,#c39bd3)',
+  'linear-gradient(135deg,#784212,#e59866)','linear-gradient(135deg,#0e6655,#1abc9c)',
+];
+const thumbBg = i => THUMBS[i % THUMBS.length];
+
+// ── DATA ───────────────────────────────────────
+const chats = [
+  {
+    id:1, name:'Sarah Mitchell', status:'online', group:false, favorite:true,
+    phone:'+1 (323) 555-0142', about:'Adventure seeker 🌄 | Coffee lover ☕ | Let\'s explore!',
+    mediaCount:47,
+    preview:'Sounds great! See you there 👍', time:hm(now.getHours(),now.getMinutes()-3), unread:2,
+    messages:[
+      {id:1,from:'them',text:"Hey! Are you free this weekend?",time:hm(10,15)},
+      {id:2,from:'me',text:"Hey Sarah! I think so, what's up?",time:hm(10,17),read:true},
+      {id:3,from:'them',text:"We're planning a hike up to Griffith Observatory. It's supposed to be beautiful this time of year 🌄",time:hm(10,18)},
+      {id:4,from:'me',text:"Oh that sounds amazing! I've been wanting to go there forever",time:hm(10,20),read:true},
+      {id:5,from:'them',text:"Perfect! We're meeting at the parking lot at 8am on Saturday",time:hm(10,21)},
+      {id:6,from:'me',text:"I'll be there! Should I bring anything?",time:hm(10,22),read:true},
+      {id:7,from:'them',text:"Just water and snacks. It's about a 3 hour round trip",time:hm(10,24)},
+      {id:8,from:'them',text:"Oh and wear comfortable shoes obviously 😄",time:hm(10,24)},
+      {id:9,from:'me',text:"Got it! Looking forward to it 🥾",time:hm(10,25),read:true},
+      {id:10,from:'them',text:"Sounds great! See you there 👍",time:hm(now.getHours(),now.getMinutes()-3)},
+      {id:11,type:'call',from:'them',callType:'voice',status:'answered',duration:'3:42',time:hm(now.getHours(),now.getMinutes()-2)},
+      {id:12,type:'image',from:'them',gradient:'linear-gradient(135deg,#1a6b5a,#2eb872)',emoji:'🌄',caption:'Found the perfect trail map for Saturday!',time:hm(now.getHours(),now.getMinutes()-1)},
+    ]
+  },
+  {
+    id:2, name:'Dev Team 🚀', status:'group', group:true,
+    about:'Ship fast, break nothing 🛠️', mediaCount:23,
+    members:[
+      {name:'Alex Chen',   phone:'+1 (415) 555-0187', isAdmin:true},
+      {name:'Priya K',     phone:'+1 (650) 555-0234', isAdmin:false},
+      {name:'Marcus R',    phone:'+1 (408) 555-0098', isAdmin:false},
+    ],
+    preview:'Marcus: PR is ready for review', time:hm(now.getHours(),now.getMinutes()-18), unread:5,
+    messages:[
+      {id:1,from:'them',sender:'Alex Chen',text:"Morning everyone! The staging deploy is live 🎉",time:hm(9,0)},
+      {id:2,from:'me',text:"Nice! I'll run through the test suite now",time:hm(9,5),read:true},
+      {id:3,from:'them',sender:'Priya K',text:"Found a small bug on the login flow. Assigned to @Marcus",time:hm(9,15)},
+      {id:4,from:'them',sender:'Marcus R',text:"On it. Should have a fix in 30 mins",time:hm(9,18)},
+      {id:5,from:'me',text:"All tests passing on my end ✅",time:hm(9,45),read:true},
+      {id:6,from:'them',sender:'Alex Chen',text:"Great! Priya can you QA the fix once Marcus pushes?",time:hm(10,0)},
+      {id:7,from:'them',sender:'Priya K',text:"Already on it!",time:hm(10,2)},
+      {id:8,from:'them',sender:'Marcus R',text:"PR is ready for review",time:hm(now.getHours(),now.getMinutes()-18)},
+    ]
+  },
+  {
+    id:3, name:'Mom ❤️', status:'offline', group:false, favorite:true,
+    phone:'+1 (312) 555-0077', about:'Available', mediaCount:112,
+    preview:'Call me when you get a chance', time:daysAgo(1), unread:0,
+    messages:[
+      {id:1,from:'them',text:"Hi sweetheart! How are you?",time:hm(18,0)},
+      {id:2,from:'me',text:"Hi Mom! I'm good, just got home from work 😊",time:hm(18,5),read:true},
+      {id:3,from:'them',text:"That's great! Are you eating well?",time:hm(18,6)},
+      {id:4,from:'me',text:"Yes yes, I made pasta last night actually!",time:hm(18,8),read:true},
+      {id:5,from:'them',text:"Good! I made your favorite apple pie today 🥧",time:hm(18,10)},
+      {id:6,from:'me',text:"No fair! I wish I was there",time:hm(18,12),read:true},
+      {id:7,from:'them',text:"Come visit next weekend then! Dad misses you too",time:hm(18,15)},
+      {id:8,from:'me',text:"I'll try! Let me check my schedule",time:hm(18,17),read:true},
+      {id:9,from:'them',text:"Call me when you get a chance",time:hm(20,30)},
+    ]
+  },
+  {
+    id:4, name:'James Okafor', status:'away', group:false,
+    phone:'+1 (213) 555-0361', about:'Busy at work — will reply later', mediaCount:8,
+    preview:'The meeting got pushed to 3pm', time:hm(now.getHours()-2,30), unread:1,
+    messages:[
+      {id:1,from:'me',text:"Hey James, are we still on for the 2pm sync?",time:hm(11,0),read:true},
+      {id:2,from:'them',text:"Hey! Actually the meeting got pushed to 3pm",time:hm(now.getHours()-2,30)},
+    ]
+  },
+  {
+    id:5, name:'Apartment Hunting 🏠', status:'group', group:true,
+    about:'Finding the perfect place together!', mediaCount:34,
+    members:[
+      {name:'Lena Novak', phone:'+1 (718) 555-0291', isAdmin:true},
+      {name:'Tom Walsh',  phone:'+1 (347) 555-0154', isAdmin:false},
+    ],
+    preview:'Lena: Found another one on Zillow!', time:daysAgo(1), unread:0,
+    messages:[
+      {id:1,from:'them',sender:'Lena',text:"Guys I found a 2BR on Oak Street! $2,400/mo",time:hm(14,0)},
+      {id:2,from:'them',sender:'Tom',text:"That's actually reasonable for this area",time:hm(14,3)},
+      {id:3,from:'me',text:"Can we schedule a viewing this week?",time:hm(14,5),read:true},
+      {id:4,from:'them',sender:'Lena',text:"Already emailed the realtor! Waiting to hear back",time:hm(14,8)},
+      {id:5,from:'them',sender:'Lena',text:"Found another one on Zillow!",time:hm(16,30)},
+    ]
+  },
+  {
+    id:6, name:'David Kim', status:'offline', group:false,
+    phone:'+1 (510) 555-0499', about:'🎮 Gamer. Developer. Night owl.', mediaCount:19,
+    preview:'haha yeah that movie was wild 😂', time:daysAgo(2), unread:0,
+    messages:[
+      {id:1,from:'them',text:"Yo did you watch the finale?!",time:hm(22,0)},
+      {id:2,from:'me',text:"YES. I can't believe that ending",time:hm(22,5),read:true},
+      {id:3,from:'them',text:"The whole season was building to that I think",time:hm(22,7)},
+      {id:4,from:'me',text:"Totally. The writers are insane",time:hm(22,9),read:true},
+      {id:5,from:'them',text:"haha yeah that movie was wild 😂",time:hm(22,11)},
+    ]
+  },
+  {
+    id:7, name:'Fitness Crew 💪', status:'group', group:true,
+    about:'No days off 🔥', mediaCount:61,
+    members:[
+      {name:'Riya Sharma', phone:'+1 (626) 555-0312', isAdmin:true},
+      {name:'Ben Collins', phone:'+1 (323) 555-0587', isAdmin:false},
+    ],
+    preview:'You: 5k done! Personal best 🎉', time:daysAgo(3), unread:0,
+    messages:[
+      {id:1,from:'them',sender:'Riya',text:"Morning run done! 8km 🏃‍♀️",time:hm(7,0)},
+      {id:2,from:'them',sender:'Ben',text:"Nice! I did leg day yesterday, can barely walk lol",time:hm(7,15)},
+      {id:3,from:'me',text:"5k done! Personal best 🎉",time:hm(7,30),read:true},
+      {id:4,from:'them',sender:'Riya',text:"YESSS!! What was your time?",time:hm(7,32)},
+      {id:5,from:'me',text:"26:45 😭 still slow but improving!",time:hm(7,33),read:true},
+    ]
+  },
+  {
+    id:8, name:'Nina Patel', status:'online', group:false,
+    phone:'+1 (669) 555-0228', about:'UX Designer ✏️ | Making things beautiful', mediaCount:52,
+    preview:'🎙 Voice message', time:daysAgo(3), unread:0,
+    messages:[
+      {id:1,from:'me',text:"Hi Nina! Could you send over the design assets when you get a chance?",time:hm(14,0),read:true},
+      {id:2,from:'them',text:"Of course! Just sent you the files!",time:hm(14,5)},
+      {id:3,from:'me',text:"Got them, thank you! 🙏",time:hm(14,7),read:true},
+      {id:4,type:'image',from:'them',gradient:'linear-gradient(135deg,#5b2c6f,#a569bd)',emoji:'🎨',caption:'Here\'s the mood board I was telling you about',time:hm(14,10)},
+      {id:5,from:'me',text:"This looks stunning! Love the color palette 😍",time:hm(14,12),read:true},
+      {id:6,type:'video',from:'them',gradient:'linear-gradient(135deg,#1b4f72,#5dade2)',duration:'0:28',time:hm(14,14)},
+      {id:7,from:'them',text:"Quick screen recording of the prototype flow",time:hm(14,14)},
+      {id:8,type:'audio',from:'me',duration:'0:15',waveSeeds:[4,7,3,9,5,8,2,6,4,7,5,3,8,6,4,9,3,7,5,8,4,6,3,9,7,5,8,4,6,3],time:hm(14,16),read:true},
+      {id:9,type:'call',from:'me',callType:'video',status:'answered',duration:'12:05',time:hm(14,30),read:true},
+      {id:10,type:'audio',from:'them',duration:'0:42',waveSeeds:[3,8,5,9,4,7,6,3,8,5,9,4,7,2,6,8,4,9,5,7,3,6,8,4,9,5,7,3,6,8],time:hm(14,35)},
+    ]
+  },
+  {
+    id:11, name:'Alex Rivera', status:'online', group:false,
+    phone:'+1 (415) 555-0319', about:'📸 Photographer | Traveler', mediaCount:88,
+    preview:'📞 Missed voice call', time:hm(now.getHours()-1,10), unread:3,
+    messages:[
+      {id:1,type:'call',from:'them',callType:'voice',status:'missed',time:hm(now.getHours()-3,0)},
+      {id:2,from:'them',text:"Hey, tried calling you!",time:hm(now.getHours()-3,1)},
+      {id:3,from:'me',text:"Sorry, was in a meeting. What's up?",time:hm(now.getHours()-2,30),read:true},
+      {id:4,type:'image',from:'them',gradient:'linear-gradient(135deg,#784212,#e59866)',emoji:'🏔️',caption:'Shot this at sunrise this morning 🌅',time:hm(now.getHours()-2,28)},
+      {id:5,type:'image',from:'them',gradient:'linear-gradient(135deg,#0e6655,#1abc9c)',emoji:'🌊',caption:'',time:hm(now.getHours()-2,28)},
+      {id:6,from:'them',text:"Took these on the coast road. Unreal light.",time:hm(now.getHours()-2,27)},
+      {id:7,from:'me',text:"These are incredible! What camera are you using now?",time:hm(now.getHours()-1,45),read:true},
+      {id:8,type:'audio',from:'them',duration:'1:03',waveSeeds:[5,9,3,7,8,4,6,9,2,8,5,7,3,9,6,4,8,5,7,3,9,6,4,8,5,7,3,9,6,4],time:hm(now.getHours()-1,44)},
+      {id:9,type:'video',from:'them',gradient:'linear-gradient(135deg,#1a3a5c,#2e86c1)',duration:'1:47',time:hm(now.getHours()-1,12)},
+      {id:10,type:'call',from:'them',callType:'video',status:'missed',time:hm(now.getHours()-1,10)},
+    ]
+  },
+  {
+    id:9, name:'Miguel Torres', status:'offline', group:false,
+    phone:'+1 (512) 555-0103', about:'Software Engineer | Distributed Systems', mediaCount:6,
+    preview:'We should grab coffee sometime', time:daysAgo(5), unread:0,
+    messages:[
+      {id:1,from:'them',text:"Hey! It was great running into you at the conference",time:hm(16,0)},
+      {id:2,from:'me',text:"Same! Really enjoyed your talk on distributed systems",time:hm(16,10),read:true},
+      {id:3,from:'them',text:"Thanks! We should grab coffee sometime",time:hm(16,15)},
+    ]
+  },
+  {
+    id:10, name:'Elena Vasquez', status:'offline', group:false,
+    phone:'+1 (786) 555-0445', about:'Happy vibes only 🌈', mediaCount:3,
+    preview:'Happy birthday!! 🎂🎉', time:daysAgo(7), unread:0,
+    messages:[
+      {id:1,from:'them',text:"Happy birthday!! 🎂🎉",time:hm(0,1)},
+      {id:2,from:'me',text:"Thank you so much Elena!! 😊",time:hm(9,0),read:true},
+    ]
+  },
+];
+
+const EMOJIS=['😀','😂','🥰','😍','🤩','😎','🥳','😊','😇','🤣','😭','😱','🙄','😴','🤔','💀','🙏','👍','👎','❤️','🔥','⭐','✅','🎉','🚀','💪','🌟','😅','😬','🤷','🎂','🌈','💯','🤝','👏','🍕','🎮','📱','💻','🎵'];
+
+let activeChat=null, filter='all', searchQ='';
+let mutedChats=new Set();
+
+// ── CHAT LIST ─────────────────────────────────
+function renderChatList() {
+  const list=document.getElementById('chat-list');
+  let items=[...chats];
+  if(searchQ) items=items.filter(c=>c.name.toLowerCase().includes(searchQ.toLowerCase())||c.messages.some(m=>m.text.toLowerCase().includes(searchQ.toLowerCase())));
+  if(filter==='unread')    items=items.filter(c=>c.unread>0);
+  if(filter==='favorites') items=items.filter(c=>c.favorite);
+  if(filter==='groups')    items=items.filter(c=>c.group);
+
+  list.innerHTML=items.map(chat=>{
+    const sel=activeChat&&activeChat.id===chat.id;
+    const last=chat.messages[chat.messages.length-1];
+    const isMe=last.from==='me';
+    const tc=chat.unread===0&&isMe?'#53bdeb':'#aebac1';
+    const tick=`<svg width="14" height="10" viewBox="0 0 18 11" fill="none" style="flex-shrink:0">
+      <polyline points="1,6 5.5,10.5 17,1" stroke="${tc}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="5,6 9.5,10.5 17,1" stroke="${tc}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" style="transform:translateX(-3px)"/>
+    </svg>`;
+    // Preview text with type icon
+    let previewHtml = chat.preview;
+    if(last.type==='audio')  previewHtml=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Voice message`;
+    if(last.type==='image')  previewHtml=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Photo`;
+    if(last.type==='video')  previewHtml=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg> Video`;
+    if(last.type==='call') {
+      const missed=last.status==='missed';
+      const vt=last.callType==='video';
+      previewHtml=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${missed?'#f15c6d':'currentColor'}" stroke-width="2" style="flex-shrink:0">${vt?'<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>':'<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/>'}</svg> <span style="color:${missed?'#f15c6d':'inherit'}">${missed?'Missed ':''}${vt?'Video':'Voice'} call</span>`;
+    }
+    return `<div class="chat-item${sel?' selected':''}${chat.unread>0?' unread':''}" onclick="openChat(${chat.id})">
+      <div class="avatar-wrap">
+        <div class="chat-avatar" style="background:${color(chat.name)}">${initials(chat.name)}</div>
+        ${chat.status==='online'?'<div class="status-dot online"></div>':''}
+      </div>
+      <div class="chat-body">
+        <div class="chat-top">
+          <span class="chat-name">${chat.name}</span>
+          <span class="chat-time">${fmtChatTime(chat.time)}</span>
+        </div>
+        <div class="chat-bottom">
+          <span class="chat-preview">
+            ${isMe?tick:''}
+            ${previewHtml}
+          </span>
+          ${chat.unread>0?`<span class="unread-badge">${chat.unread}</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── OPEN CHAT ─────────────────────────────────
+function openChat(id) {
+  activeChat=chats.find(c=>c.id===id);
+  if(!activeChat) return;
+  activeChat.unread=0;
+  closeProfile();
+  document.getElementById('welcome').style.display='none';
+  document.getElementById('messages').style.display='flex';
+  document.getElementById('input-area').style.display='flex';
+  document.getElementById('chat-header').style.display='flex';
+  const av=document.getElementById('active-avatar');
+  av.textContent=initials(activeChat.name);
+  av.style.background=color(activeChat.name);
+  document.getElementById('contact-name').textContent=activeChat.name;
+  document.getElementById('contact-status').textContent=
+    activeChat.status==='online'?'online':
+    activeChat.status==='away'?'last seen recently':
+    activeChat.group?`${(activeChat.members||[]).length+1} participants`:'last seen today';
+  const dot=document.getElementById('active-status-dot');
+  dot.className='status-dot '+(activeChat.status==='online'?'online':activeChat.status==='away'?'away':'');
+  renderMessages();
+  renderChatList();
+  if(window.innerWidth<=768){
+    document.getElementById('sidebar').classList.add('hide');
+    document.getElementById('main').classList.add('show');
+  }
+}
+
+// ── MESSAGES ──────────────────────────────────
+function groupByDate(msgs) {
+  const g=[]; let last=null;
+  msgs.forEach(m=>{
+    const d=new Date(m.time); d.setHours(0,0,0,0);
+    const k=d.toDateString();
+    if(k!==last){
+      const today=new Date(); today.setHours(0,0,0,0);
+      const yest=new Date(today); yest.setDate(yest.getDate()-1);
+      let lbl=d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+      if(d.toDateString()===today.toDateString()) lbl='Today';
+      else if(d.toDateString()===yest.toDateString()) lbl='Yesterday';
+      g.push({type:'date',lbl}); last=k;
+    }
+    g.push({type:'msg',m});
+  });
+  return g;
+}
+const isEmojiOnly=t=>/^[\p{Emoji}\s]{1,5}$/u.test(t.trim())&&t.trim().length<=8;
+
+function mkTick(m) {
+  if(m.from!=='me') return '';
+  const tc=m.read?'#53bdeb':'#aebac1';
+  return `<span class="tick"><svg width="16" height="10" viewBox="0 0 18 11" fill="none">
+    <polyline points="1,6 5.5,10.5 17,1" stroke="${tc}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="5,6 9.5,10.5 17,1" stroke="${tc}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" style="transform:translateX(-3px)"/>
+  </svg></span>`;
+}
+function mkMetaRow(m, light) {
+  const col=light?'rgba(255,255,255,.7)':'rgba(233,237,239,0.6)';
+  return `<div style="display:flex;align-items:center;justify-content:flex-end;gap:3px;margin-top:2px">
+    <span style="font-size:11px;color:${col}">${fmtMsgTime(m.time)}</span>${mkTick(m)}
+  </div>`;
+}
+
+function renderCallBubble(m) {
+  const isMissed = m.status==='missed';
+  const isVideo  = m.callType==='video';
+  const label    = isMissed
+    ? (m.from==='me' ? `Missed ${isVideo?'video':'voice'} call` : `Missed ${isVideo?'video':'voice'} call`)
+    : (m.from==='me' ? `${isVideo?'Video':'Voice'} call` : `${isVideo?'Video':'Voice'} call`);
+  const subLabel = isMissed
+    ? 'Tap to call back'
+    : `${m.from==='me'?'Outgoing':'Incoming'} · ${m.duration}`;
+  const iconColor= isMissed ? '#f15c6d' : '#00a884';
+  const phoneIcon=isVideo
+    ? `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`
+    : `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>`;
+  const arrowSvg= isMissed
+    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f15c6d" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>`
+    : (m.from==='me'
+        ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00a884" stroke-width="2.5"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="7 7 7 17 17 17"/></svg>`
+        : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00a884" stroke-width="2.5"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>`);
+  return `<div class="call-bubble">
+    <div class="call-icon-wrap ${isMissed?'missed':'answered'}">${phoneIcon}</div>
+    <div class="call-details">
+      <div class="call-label${isMissed?' missed-lbl':''}">${label}</div>
+      <div class="call-meta-row">${arrowSvg}<span>${subLabel}</span></div>
+    </div>
+    <button class="call-callback-btn" onclick="showToast('Calling...')" title="Call back">
+      ${phoneIcon}
+    </button>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:flex-end;gap:3px;padding:0 8px 8px">
+    <span style="font-size:11px;color:rgba(233,237,239,0.5)">${fmtMsgTime(m.time)}</span>${mkTick(m)}
+  </div>`;
+}
+
+function renderAudioBubble(m) {
+  const seeds=m.waveSeeds||[3,6,4,8,5,7,4,9,3,7,5,8,4,6,3,9,7,5,8,4,6,3,9,7,5,8,4,6,3,9];
+  const bars=seeds.map((h,i)=>{
+    const pct=(i/seeds.length);
+    const played=pct<0.35;
+    const heightPct=Math.min(100,Math.max(15,h*11));
+    return `<div class="wv-bar${played?' played':''}" style="height:${heightPct}%"></div>`;
+  }).join('');
+  const avatarBg = m.from==='me' ? 'var(--accent)' : color(activeChat.name);
+  const avatarTxt= m.from==='me' ? 'Y' : initials(activeChat.name);
+  return `<div class="audio-bubble">
+    <button class="audio-play-btn" onclick="playAudio(this)">
+      <svg id="play-icon" width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    </button>
+    <div class="audio-body">
+      <div class="audio-waveform" onclick="seekAudio(this)">${bars}</div>
+      <div class="audio-footer">
+        <span class="audio-duration">${m.duration}</span>
+        <div class="audio-avatar-small" style="background:${avatarBg}">${avatarTxt}</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:flex-end;gap:3px;padding:0 8px 6px">
+    <span style="font-size:11px;color:rgba(233,237,239,0.5)">${fmtMsgTime(m.time)}</span>${mkTick(m)}
+  </div>`;
+}
+
+function renderImageBubble(m) {
+  return `<div class="img-bubble">
+    <div class="img-bubble-inner" onclick="showToast('Opening image...')">
+      <div class="img-placeholder" style="background:${m.gradient||'linear-gradient(135deg,#1a6b5a,#2eb872)'}">
+        <span style="font-size:52px;opacity:.7">${m.emoji||'🖼️'}</span>
+      </div>
+      <div class="img-overlay">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+      </div>
+    </div>
+    ${m.caption?`<div class="img-caption">${escHtml(m.caption)}</div>`:''}
+    <div class="img-meta-row">
+      <span style="font-size:11px;color:rgba(233,237,239,0.55)">${fmtMsgTime(m.time)}</span>${mkTick(m)}
+    </div>
+  </div>`;
+}
+
+function renderVideoBubble(m) {
+  return `<div class="vid-bubble">
+    <div class="vid-bubble-inner" onclick="showToast('Playing video...')">
+      <div class="vid-placeholder" style="background:${m.gradient||'linear-gradient(135deg,#1a3a5c,#2e86c1)'}">
+        <div class="vid-play-circle">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </div>
+        <div class="vid-duration-badge">${m.duration||'0:15'}</div>
+      </div>
+    </div>
+    <div class="vid-meta-row">
+      <span style="font-size:11px;color:rgba(233,237,239,0.55)">${fmtMsgTime(m.time)}</span>${mkTick(m)}
+    </div>
+  </div>`;
+}
+
+function renderMessages() {
+  const c=document.getElementById('messages');
+  c.innerHTML=groupByDate(activeChat.messages).map(item=>{
+    if(item.type==='date') return `<div class="date-separator"><div class="date-chip">${item.lbl}</div></div>`;
+    const m=item.m;
+    const side=m.from==='me'?'sent':'recv';
+    const snd=m.sender?`<div style="color:${color(m.sender)};font-size:13px;font-weight:600;margin-bottom:3px">${m.sender}</div>`:'';
+
+    // Special bubble types
+    if(m.type==='call') {
+      return `<div class="msg-row ${side}"><div class="bubble" style="padding:0;overflow:hidden">${renderCallBubble(m)}</div></div>`;
+    }
+    if(m.type==='audio') {
+      return `<div class="msg-row ${side}"><div class="bubble" style="padding:0;overflow:hidden">${renderAudioBubble(m)}</div></div>`;
+    }
+    if(m.type==='image') {
+      return `<div class="msg-row ${side}"><div class="bubble" style="padding:0;overflow:hidden;background:transparent;box-shadow:none">${snd}<div style="background:${side==='sent'?'var(--bg-sent)':'var(--bg-recv)'};border-radius:7.5px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.3)">${renderImageBubble(m)}</div></div></div>`;
+    }
+    if(m.type==='video') {
+      return `<div class="msg-row ${side}"><div class="bubble" style="padding:0;overflow:hidden;background:transparent;box-shadow:none">${snd}<div style="background:${side==='sent'?'var(--bg-sent)':'var(--bg-recv)'};border-radius:7.5px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.3)">${renderVideoBubble(m)}</div></div></div>`;
+    }
+
+    // Text bubble
+    const eo=isEmojiOnly(m.text||'');
+    const tc=m.read?'#53bdeb':'#aebac1';
+    const tick=m.from==='me'?`<span class="tick"><svg width="16" height="10" viewBox="0 0 18 11" fill="none">
+      <polyline points="1,6 5.5,10.5 17,1" stroke="${tc}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="5,6 9.5,10.5 17,1" stroke="${tc}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" style="transform:translateX(-3px)"/>
+    </svg></span>`:'';
+    return `<div class="msg-row ${side}">
+      <div class="bubble${eo?' emoji-only':''}">
+        ${snd}
+        <div class="bubble-text">${escHtml(m.text||'')}</div>
+        <div class="bubble-meta"><span class="msg-time">${fmtMsgTime(m.time)}</span>${tick}</div>
+      </div>
+    </div>`;
+  }).join('');
+  c.scrollTop=c.scrollHeight;
+}
+
+function sendMessage() {
+  const inp=document.getElementById('msg-input');
+  const txt=inp.value.trim();
+  if(!txt||!activeChat) return;
+  activeChat.messages.push({id:Date.now(),from:'me',text:txt,time:new Date(),read:false});
+  activeChat.preview=txt; activeChat.time=new Date();
+  inp.value=''; inp.style.height='auto'; closeEmoji();
+  renderMessages();
+  const rows=document.querySelectorAll('#messages .msg-row');
+  if(rows.length) rows[rows.length-1].classList.add('new');
+  renderChatList();
+  if(!activeChat.group) simulateReply();
+}
+
+function playAudio(btn) {
+  const isPlaying = btn.dataset.playing === '1';
+  // Reset all playing buttons
+  document.querySelectorAll('.audio-play-btn').forEach(b => {
+    b.dataset.playing = '0';
+    b.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+  });
+  if (!isPlaying) {
+    btn.dataset.playing = '1';
+    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
+    showToast('Playing voice message...');
+    setTimeout(() => {
+      btn.dataset.playing = '0';
+      btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+    }, 3000);
+  }
+}
+function seekAudio(waveEl) {
+  showToast('Seeking audio...');
+}
+
+function simulateReply() {
+  setTimeout(()=>{
+    const tr=document.createElement('div');
+    tr.className='msg-row recv'; tr.id='typing-row';
+    tr.innerHTML=`<div class="bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+    document.getElementById('messages').appendChild(tr);
+    document.getElementById('messages').scrollTop=9999;
+    const rs=["Got it! 👍","Sounds good!","Haha yeah 😄","For sure!","That makes sense","Oh interesting!","I'll check and get back to you","Perfect!","Sure thing! 🙌","Noted ✅"];
+    setTimeout(()=>{
+      const old=document.getElementById('typing-row');
+      if(old) old.remove();
+      const txt=rs[Math.floor(Math.random()*rs.length)];
+      activeChat.messages.push({id:Date.now()+1,from:'them',text:txt,time:new Date()});
+      activeChat.preview=txt; activeChat.time=new Date();
+      renderMessages(); renderChatList();
+    },1200+Math.random()*800);
+  },800);
+}
+
+// ── PROFILE PANEL ────────────────────────────
+function openProfile() {
+  if(!activeChat) return;
+  renderProfile();
+  document.getElementById('profile-panel').classList.add('open');
+}
+function closeProfile() {
+  document.getElementById('profile-panel').classList.remove('open');
+}
+
+function renderProfile() {
+  const c=activeChat;
+
+  // Hero
+  const av=document.getElementById('prof-av-xl');
+  av.style.background=color(c.name);
+  document.getElementById('prof-av-initials').textContent=initials(c.name);
+  document.getElementById('prof-name').textContent=c.name;
+  document.getElementById('profile-panel-title').textContent=c.group?'Group info':'Contact info';
+
+  let sub='';
+  if(c.status==='online') sub='online';
+  else if(c.status==='away') sub='last seen recently';
+  else if(c.group) sub=`${(c.members||[]).length+1} participants`;
+  else sub='last seen today';
+  document.getElementById('prof-sub').textContent=sub;
+
+  document.getElementById('profile-content').innerHTML=
+    c.group ? buildGroupContent(c) : buildContactContent(c);
+}
+
+function buildContactContent(c) {
+  const muted=mutedChats.has(c.id);
+  const mediaHtml=buildMediaGrid(c);
+  return `
+    <!-- Phone -->
+    <div class="prof-section">
+      <div class="prof-info-row">
+        <div class="prof-info-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/>
+          </svg>
+        </div>
+        <div class="prof-info-body">
+          <div class="prof-info-val">${c.phone}</div>
+          <div class="prof-info-lbl">Mobile</div>
+        </div>
+        <button class="prof-copy-btn" onclick="copyText('${c.phone}')" title="Copy">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="prof-section">
+      <div class="prof-section-label">About</div>
+      <div class="prof-about-text">${escHtml(c.about||'Hey there! I am using WhatsApp.')}</div>
+    </div>
+
+    <!-- Media -->
+    <div class="prof-section">
+      <div class="prof-media-header">
+        <div class="prof-media-header-left">
+          <span class="prof-media-title">Media, links and docs</span>
+          <span class="prof-media-count">${c.mediaCount}</span>
+        </div>
+        <button class="prof-media-see-all" onclick="showToast('Viewing all media')">
+          See all
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      ${mediaHtml}
+    </div>
+
+    <!-- Settings -->
+    <div class="prof-section">
+      <div class="prof-toggle-row" onclick="toggleMute(${c.id})">
+        <div class="prof-toggle-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            ${muted?'<line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>':'<path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/>'}
+          </svg>
+        </div>
+        <div class="prof-toggle-body">
+          <div class="prof-toggle-label">${muted?'Unmute notifications':'Mute notifications'}</div>
+        </div>
+        <button class="toggle-switch${muted?' on':''}" id="mute-toggle-${c.id}" onclick="event.stopPropagation();toggleMute(${c.id})"></button>
+      </div>
+      <div class="prof-toggle-row" onclick="showToast('Disappearing messages')">
+        <div class="prof-toggle-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="prof-toggle-body">
+          <div class="prof-toggle-label">Disappearing messages</div>
+          <div class="prof-toggle-sub">Off</div>
+        </div>
+        <div class="prof-arrow">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+      <div class="prof-toggle-row" onclick="showToast('Messages are end-to-end encrypted')">
+        <div class="prof-toggle-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+        </div>
+        <div class="prof-toggle-body">
+          <div class="prof-toggle-label">Encryption</div>
+          <div class="prof-toggle-sub">Messages are end-to-end encrypted. Tap to verify.</div>
+        </div>
+        <div class="prof-arrow">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+      <div class="prof-toggle-row" onclick="showToast('Added to favorites')">
+        <div class="prof-toggle-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </div>
+        <div class="prof-toggle-body">
+          <div class="prof-toggle-label">Add to favorites</div>
+        </div>
+        <div class="prof-arrow">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danger -->
+    <button class="prof-danger-row" onclick="showToast('${escHtml(c.name)} has been blocked')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f15c6d" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+      </svg>
+      <span>Block ${escHtml(c.name)}</span>
+    </button>
+    <button class="prof-danger-row" onclick="showToast('Report sent')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f15c6d" stroke-width="2">
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
+      </svg>
+      <span>Report ${escHtml(c.name)}</span>
+    </button>
+    <div style="height:20px"></div>
+  `;
+}
+
+function buildGroupContent(c) {
+  const muted=mutedChats.has(c.id);
+  const mediaHtml=buildMediaGrid(c);
+  const totalMembers=(c.members||[]).length+1;
+  const membersHtml=(c.members||[]).map(m=>`
+    <div class="member-row">
+      <div class="member-av" style="background:${color(m.name)}">${initials(m.name)}</div>
+      <div class="member-body">
+        <div class="member-name">${escHtml(m.name)}</div>
+        <div class="member-phone">${m.phone}</div>
+      </div>
+      ${m.isAdmin?'<span class="member-badge">Group admin</span>':''}
+    </div>
+  `).join('');
+
+  return `
+    <!-- Description -->
+    <div class="prof-section">
+      <div class="prof-section-label">Description</div>
+      <div class="prof-about-text">${escHtml(c.about||'No description')}</div>
+    </div>
+
+    <!-- Media -->
+    <div class="prof-section">
+      <div class="prof-media-header">
+        <div class="prof-media-header-left">
+          <span class="prof-media-title">Media, links and docs</span>
+          <span class="prof-media-count">${c.mediaCount}</span>
+        </div>
+        <button class="prof-media-see-all" onclick="showToast('Viewing all media')">
+          See all
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      ${mediaHtml}
+    </div>
+
+    <!-- Settings -->
+    <div class="prof-section">
+      <div class="prof-toggle-row" onclick="toggleMute(${c.id})">
+        <div class="prof-toggle-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            ${muted?'<line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>':'<path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/>'}
+          </svg>
+        </div>
+        <div class="prof-toggle-body">
+          <div class="prof-toggle-label">${muted?'Unmute notifications':'Mute notifications'}</div>
+        </div>
+        <button class="toggle-switch${muted?' on':''}" onclick="event.stopPropagation();toggleMute(${c.id})"></button>
+      </div>
+      <div class="prof-toggle-row" onclick="showToast('Disappearing messages')">
+        <div class="prof-toggle-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="prof-toggle-body">
+          <div class="prof-toggle-label">Disappearing messages</div>
+          <div class="prof-toggle-sub">Off</div>
+        </div>
+        <div class="prof-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+      <div class="prof-toggle-row" onclick="showToast('Messages are end-to-end encrypted')">
+        <div class="prof-toggle-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+        </div>
+        <div class="prof-toggle-body">
+          <div class="prof-toggle-label">Encryption</div>
+          <div class="prof-toggle-sub">Messages are end-to-end encrypted. Tap to verify.</div>
+        </div>
+        <div class="prof-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+    </div>
+
+    <!-- Members -->
+    <div class="prof-section">
+      <div class="prof-members-header">
+        <span class="prof-members-title">Participants</span>
+        <span class="prof-members-count">${totalMembers}</span>
+      </div>
+      <div class="prof-member-search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--text-secondary);flex-shrink:0">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" placeholder="Search participants">
+      </div>
+      <div class="add-member-row" onclick="showToast('Add participant')">
+        <div class="add-member-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+            <line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+          </svg>
+        </div>
+        <div class="add-member-label">Add participant</div>
+      </div>
+      <div class="add-member-row" onclick="showToast('Invite via link copied')">
+        <div class="add-member-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+          </svg>
+        </div>
+        <div class="add-member-label">Invite via link</div>
+      </div>
+      <!-- You -->
+      <div class="member-row">
+        <div class="member-av" style="background:var(--accent)">Y</div>
+        <div class="member-body">
+          <div class="member-name">You</div>
+          <div class="member-phone">+1 (555) 000-0000</div>
+        </div>
+        <span class="member-badge">Group admin</span>
+      </div>
+      ${membersHtml}
+    </div>
+
+    <!-- Danger -->
+    <button class="prof-danger-row" onclick="showToast('You left the group')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f15c6d" stroke-width="2">
+        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+        <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      <span>Exit group</span>
+    </button>
+    <button class="prof-danger-row" onclick="showToast('Group reported')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f15c6d" stroke-width="2">
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+        <line x1="4" y1="22" x2="4" y2="15"/>
+      </svg>
+      <span>Report group</span>
+    </button>
+    <div style="height:20px"></div>
+  `;
+}
+
+function buildMediaGrid(c) {
+  const count=Math.min(c.mediaCount,6);
+  if(count===0) return '<div style="padding:4px 20px 14px;font-size:14px;color:var(--text-secondary)">No media shared</div>';
+  const cells=[];
+  for(let i=0;i<Math.min(count,5);i++){
+    cells.push(`<div class="media-thumb" style="background:${thumbBg(i+(c.id*3))}" onclick="showToast('View media')"></div>`);
+  }
+  if(c.mediaCount>5){
+    cells.push(`<div class="media-thumb" style="background:${thumbBg(5+(c.id*3))};position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="showToast('View all media')">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:#fff">+${c.mediaCount-5}</div>
+    </div>`);
+  }
+  return `<div class="prof-media-grid">${cells.join('')}</div>`;
+}
+
+function toggleMute(id) {
+  if(mutedChats.has(id)) mutedChats.delete(id);
+  else mutedChats.add(id);
+  renderProfile();
+  showToast(mutedChats.has(id)?'Notifications muted':'Notifications unmuted');
+}
+
+// ── HELPERS ───────────────────────────────────
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,140)+'px'; }
+function escHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>'); }
+function filterChats(q) { searchQ=q; renderChatList(); }
+function setFilter(f,btn) {
+  filter=f;
+  document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderChatList();
+}
+function goBack() {
+  closeProfile();
+  document.getElementById('sidebar').classList.remove('hide');
+  document.getElementById('main').classList.remove('show');
+  activeChat=null;
+}
+function copyText(t) {
+  navigator.clipboard.writeText(t).catch(()=>{});
+  showToast('Copied to clipboard');
+}
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function toggleEmoji() { document.getElementById('emoji-picker').classList.toggle('open'); }
+function closeEmoji()  { document.getElementById('emoji-picker').classList.remove('open'); }
+function insertEmoji(e) {
+  const inp=document.getElementById('msg-input');
+  inp.value+=e; inp.focus(); autoResize(inp); closeEmoji();
+}
+document.addEventListener('click',e=>{
+  const p=document.getElementById('emoji-picker');
+  const b=document.getElementById('emoji-toggle-btn');
+  if(p.classList.contains('open')&&!p.contains(e.target)&&e.target!==b&&!b.contains(e.target)) closeEmoji();
+});
+
+// ── INIT ──────────────────────────────────────
+document.getElementById('emoji-grid').innerHTML=EMOJIS.map(e=>`<button class="emoji-btn" onclick="insertEmoji('${e}')">${e}</button>`).join('');
+renderChatList();
+openChat(1);
+</script>
+</body>
+</html>

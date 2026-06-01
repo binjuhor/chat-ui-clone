@@ -4,10 +4,10 @@ Pixel-perfect messaging app UI clones — single HTML files, zero dependencies.
 
 ## TODO
 
-- [x] WhatsApp Web
-- [x] Telegram Web
-- [x] Zalo Web
-- [x] Facebook Messenger Web
+- [x] WhatsApp Web (dark + light)
+- [x] Telegram Web (dark + light)
+- [x] Zalo Web (light)
+- [x] Facebook Messenger Web (dark + light)
 
 ---
 
@@ -17,7 +17,12 @@ A pixel-perfect WhatsApp Web UI clone.
 
 ### Demo
 
-Open `whatsapp-web.html` directly in any modern browser. No server, no build step.
+| Theme | File |
+|-------|------|
+| Dark  | `whatsapp-web.html` |
+| Light | `whatsapp-web-light.html` |
+
+Open directly in any modern browser. No server, no build step.
 
 ### Features
 
@@ -41,7 +46,12 @@ A pixel-perfect Telegram Web UI clone.
 
 ### Demo
 
-Open `telegram-web.html` directly in any modern browser. No server, no build step.
+| Theme | File |
+|-------|------|
+| Dark  | `telegram-web.html` |
+| Light | `telegram-web-light.html` |
+
+Open directly in any modern browser. No server, no build step.
 
 ### Features
 
@@ -169,7 +179,12 @@ A pixel-perfect Facebook Messenger Web UI clone.
 
 ### Demo
 
-Open `messenger-web.html` directly in any modern browser. No server, no build step.
+| Theme | File |
+|-------|------|
+| Dark  | `messenger-web.html` |
+| Light | `messenger-web-light.html` |
+
+Open directly in any modern browser. No server, no build step.
 
 ### Features
 
@@ -204,8 +219,11 @@ Open `messenger-web.html` directly in any modern browser. No server, no build st
 
 ```
 whatsapp/
-├── whatsapp-web.html    # WhatsApp Web clone
-├── telegram-web.html   # Telegram Web clone
-├── zalo-web.html       # Zalo Web clone
-└── messenger-web.html  # Facebook Messenger Web clone
+├── whatsapp-web.html         # WhatsApp Web — dark theme
+├── whatsapp-web-light.html   # WhatsApp Web — light theme
+├── telegram-web.html         # Telegram Web — dark theme
+├── telegram-web-light.html   # Telegram Web — light theme
+├── zalo-web.html             # Zalo Web — light theme
+├── messenger-web.html        # Facebook Messenger Web — dark theme
+└── messenger-web-light.html  # Facebook Messenger Web — light theme
 ```
