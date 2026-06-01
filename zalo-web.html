@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zalo</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --accent:     #006AF5;
+  --accent-dk:  #005AE0;
+  --accent-lt:  #e8f1ff;
+  --sent:       #dbeeff;
+  --recv:       #ffffff;
+  --bg:         #f0f2f5;
+  --nav-bg:     #005AE0;
+  --list-bg:    #ffffff;
+  --panel-bg:   #ffffff;
+  --chat-bg:    #eef0f3;
+  --border:     #e5e5e5;
+  --hover:      #f0f2f5;
+  --text-pri:   #1e1e1e;
+  --text-sec:   #7f8c8d;
+  --online:     #26cc5a;
+  --missed:     #e54949;
+  --sys-bg:     rgba(0,0,0,0.07);
+  --font:       -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+html, body { height: 100%; background: var(--bg); font-family: var(--font); overflow: hidden; }
+
+#app { display: flex; height: 100vh; width: 100%; max-width: 1600px; margin: 0 auto; }
+
+/* ── NAV STRIP ── */
+#nav-strip {
+  width: 64px; flex-shrink: 0;
+  background: var(--nav-bg);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 0;
+  gap: 4px;
+}
+
+.nav-logo {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 8px; cursor: pointer;
+}
+
+.nav-btn {
+  width: 44px; height: 44px; border-radius: 12px; border: none;
+  background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; color: rgba(255,255,255,0.7); transition: background 0.15s;
+  position: relative;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.nav-btn.active { background: rgba(255,255,255,0.18); color: #fff; }
+
+.nav-btn-label { font-size: 9.5px; font-weight: 500; white-space: nowrap; }
+
+.nav-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: var(--accent);
+  cursor: pointer; margin-top: auto; margin-bottom: 8px;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: 320px; flex-shrink: 0;
+  background: var(--list-bg);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+
+#sidebar-top {
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-wrap {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--hover); border-radius: 20px; padding: 7px 12px;
+}
+.search-wrap input {
+  flex: 1; border: none; background: none;
+  font-size: 14px; color: var(--text-pri); outline: none;
+}
+.search-wrap input::placeholder { color: var(--text-sec); }
+
+#filter-row {
+  display: flex; gap: 4px; padding: 8px 12px 0;
+}
+.ftab {
+  padding: 5px 14px; border-radius: 16px; font-size: 13px; font-weight: 500;
+  cursor: pointer; border: none; background: var(--hover); color: var(--text-sec);
+  transition: all 0.15s; white-space: nowrap;
+}
+.ftab.active { background: var(--accent-lt); color: var(--accent); }
+
+#chat-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #ddd transparent; }
+#chat-list::-webkit-scrollbar { width: 4px; }
+#chat-list::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+
+.chat-item {
+  display: flex; align-items: center; padding: 8px 12px; gap: 10px;
+  cursor: pointer; transition: background 0.12s; position: relative;
+}
+.chat-item:hover { background: var(--hover); }
+.chat-item.active { background: var(--accent-lt); }
+
+.avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #fff; flex-shrink: 0; position: relative;
+  font-size: 16px;
+}
+.avatar .dot {
+  position: absolute; bottom: 1px; right: 1px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--online); border: 2px solid var(--list-bg);
+}
+
+.chat-content { flex: 1; min-width: 0; }
+.chat-r1 { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.chat-name { font-size: 14.5px; font-weight: 600; color: var(--text-pri); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-time { font-size: 11.5px; color: var(--text-sec); flex-shrink: 0; }
+.chat-time.unread-t { color: var(--accent); font-weight: 600; }
+.chat-r2 { display: flex; align-items: center; gap: 6px; }
+.chat-prev { font-size: 13px; color: var(--text-sec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.chat-prev.bold { color: var(--text-pri); font-weight: 500; }
+.ubadge {
+  min-width: 18px; height: 18px; border-radius: 9px;
+  background: var(--accent); color: #fff; font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 5px; flex-shrink: 0;
+}
+.ubadge.muted { background: var(--text-sec); }
+
+/* ── MAIN ── */
+#main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--panel-bg); }
+
+#empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px; background: var(--chat-bg);
+}
+.empty-logo {
+  width: 96px; height: 96px; border-radius: 50%;
+  background: var(--accent-lt); display: flex; align-items: center; justify-content: center;
+}
+.empty-title { font-size: 20px; font-weight: 700; color: var(--text-pri); }
+.empty-sub { font-size: 14px; color: var(--text-sec); }
+
+#chat-view { display: none; flex: 1; flex-direction: column; min-height: 0; }
+#chat-view.open { display: flex; }
+
+/* Chat header */
+#chat-header {
+  display: flex; align-items: center; padding: 10px 16px;
+  background: var(--panel-bg); height: 58px;
+  border-bottom: 1px solid var(--border); gap: 10px; flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+#back-btn { display: none; }
+
+#h-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0; position: relative;
+}
+.h-info { flex: 1; min-width: 0; cursor: pointer; }
+.h-name { font-size: 15.5px; font-weight: 700; color: var(--text-pri); }
+.h-status { font-size: 12.5px; color: var(--text-sec); }
+.h-status.on { color: var(--online); }
+.h-actions { display: flex; align-items: center; gap: 2px; }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: none; background: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--accent); transition: background 0.15s;
+}
+.icon-btn:hover { background: var(--accent-lt); }
+
+/* Messages area */
+#msgs {
+  flex: 1; overflow-y: auto; padding: 12px 16px;
+  display: flex; flex-direction: column; gap: 1px;
+  background: var(--chat-bg);
+  scrollbar-width: thin; scrollbar-color: #ccc transparent;
+}
+#msgs::-webkit-scrollbar { width: 4px; }
+#msgs::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+/* Date / system */
+.date-sep { display: flex; justify-content: center; margin: 10px 0 6px; }
+.date-sep span {
+  background: var(--sys-bg); color: var(--text-sec);
+  font-size: 12px; padding: 4px 12px; border-radius: 12px;
+}
+.sys-msg { display: flex; justify-content: center; margin: 4px 0; }
+.sys-msg span {
+  background: var(--sys-bg); color: var(--text-sec);
+  font-size: 12.5px; padding: 4px 14px; border-radius: 12px;
+}
+
+/* Bubbles */
+.mrow { display: flex; margin-bottom: 2px; align-items: flex-end; gap: 6px; }
+.mrow.sent { justify-content: flex-end; }
+.mrow.recv { justify-content: flex-start; }
+.mrow.gstart { margin-top: 6px; }
+
+.bubble {
+  max-width: 440px; min-width: 64px;
+  border-radius: 18px; padding: 8px 12px;
+  position: relative; word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.07);
+}
+.mrow.sent .bubble  { background: var(--sent); border-bottom-right-radius: 5px; }
+.mrow.recv .bubble  { background: var(--recv); border: 1px solid var(--border); border-bottom-left-radius: 5px; }
+.mrow.notail.sent .bubble { border-bottom-right-radius: 18px; }
+.mrow.notail.recv .bubble { border-bottom-left-radius: 18px; }
+
+.msg-avatar-sm {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.msg-avatar-sm.invis { visibility: hidden; }
+
+.sender-name { font-size: 12.5px; font-weight: 600; margin-bottom: 3px; }
+.msg-text { font-size: 14.5px; color: var(--text-pri); line-height: 1.5; }
+
+.meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 3px; }
+.meta-time { font-size: 11px; color: var(--text-sec); }
+
+/* Seen avatar */
+.seen-row { display: flex; justify-content: flex-end; margin-top: 2px; padding-right: 2px; gap: 2px; }
+.seen-av {
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7px; font-weight: 700; color: #fff;
+}
+
+/* Reply quote */
+.rquote {
+  border-left: 3px solid var(--accent); padding: 4px 8px;
+  margin-bottom: 5px; border-radius: 0 6px 6px 0;
+  background: rgba(0,106,245,0.08);
+}
+.rquote-name { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 1px; }
+.rquote-text { font-size: 12px; color: var(--text-sec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+
+/* Forward */
+.fwd-label {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 4px;
+  padding-bottom: 4px; border-bottom: 1px solid rgba(0,106,245,0.15);
+}
+
+/* Sticker */
+.sticker-bubble { background: transparent !important; border: none !important; box-shadow: none !important; padding: 2px !important; }
+.sticker-emoji { font-size: 72px; line-height: 1.1; display: block; }
+
+/* Image */
+.img-msg {
+  width: 260px; border-radius: 10px; overflow: hidden;
+  margin: -4px -8px; cursor: pointer; position: relative;
+}
+.img-thumb {
+  width: 100%; height: 185px;
+  display: flex; align-items: center; justify-content: center; position: relative;
+}
+.img-caption { padding: 6px 8px 2px; font-size: 13.5px; color: var(--text-pri); }
+.img-overlay {
+  position: absolute; bottom: 7px; right: 8px;
+  background: rgba(0,0,0,0.4); border-radius: 10px;
+  padding: 2px 7px; display: flex; align-items: center; gap: 3px;
+}
+.img-overlay .meta-time { color: rgba(255,255,255,0.9); }
+
+/* Video */
+.video-msg {
+  width: 260px; height: 185px; border-radius: 10px; overflow: hidden;
+  margin: -4px -8px; cursor: pointer; position: relative;
+}
+.video-thumb { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+.play-btn {
+  width: 50px; height: 50px; border-radius: 50%;
+  background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+}
+.video-dur {
+  position: absolute; bottom: 8px; left: 8px;
+  background: rgba(0,0,0,0.5); color: #fff; font-size: 12px;
+  padding: 2px 7px; border-radius: 10px;
+}
+
+/* Voice */
+.voice-msg { display: flex; align-items: center; gap: 10px; min-width: 200px; padding: 2px 0; }
+.v-play {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; transition: background 0.15s;
+}
+.v-play:hover { background: var(--accent-dk); }
+.waveform { display: flex; align-items: center; gap: 2px; flex: 1; height: 28px; cursor: pointer; }
+.wbar { width: 3px; border-radius: 2px; background: rgba(0,0,0,0.2); flex-shrink: 0; }
+.mrow.sent .wbar { background: rgba(0,106,245,0.25); }
+.wbar.played { background: var(--accent) !important; }
+.v-dur { font-size: 12px; color: var(--text-sec); flex-shrink: 0; }
+
+/* Call */
+.call-bubble { display: flex; align-items: center; gap: 10px; min-width: 185px; padding: 2px 0; cursor: pointer; }
+.call-ico { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.call-ico.inc  { background: rgba(38,204,90,0.15); }
+.call-ico.out  { background: rgba(0,106,245,0.15); }
+.call-ico.miss { background: rgba(229,73,73,0.12); }
+.call-info { flex: 1; }
+.call-title { font-size: 14px; font-weight: 600; color: var(--text-pri); }
+.call-title.miss { color: var(--missed); }
+.call-sub { font-size: 12px; color: var(--text-sec); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+
+/* Typing */
+#typing { padding: 2px 16px 8px; display: none; }
+.typing-bbl {
+  background: var(--recv); border: 1px solid var(--border); border-radius: 18px;
+  border-bottom-left-radius: 5px; padding: 10px 14px;
+  display: inline-flex; align-items: center; gap: 4px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.07);
+}
+.tdot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-sec); animation: tb 1.2s infinite; }
+.tdot:nth-child(2) { animation-delay: 0.2s; }
+.tdot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes tb { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+/* Input area */
+#input-area {
+  background: var(--panel-bg); padding: 10px 14px;
+  display: flex; align-items: flex-end; gap: 8px;
+  border-top: 1px solid var(--border); flex-shrink: 0;
+  position: relative;
+}
+.in-btn {
+  width: 38px; height: 38px; border-radius: 50%; border: none; background: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--accent); transition: background 0.15s; flex-shrink: 0;
+}
+.in-btn:hover { background: var(--accent-lt); }
+
+.input-pill {
+  flex: 1; background: var(--hover); border-radius: 22px;
+  display: flex; align-items: flex-end; padding: 8px 14px; gap: 8px;
+  min-height: 42px;
+}
+#msg-input {
+  flex: 1; border: none; background: none; outline: none;
+  font-size: 15px; color: var(--text-pri); resize: none;
+  max-height: 120px; min-height: 22px; font-family: var(--font);
+  line-height: 1.45; scrollbar-width: none;
+}
+#msg-input::-webkit-scrollbar { display: none; }
+#msg-input::placeholder { color: var(--text-sec); }
+
+.send-btn {
+  width: 38px; height: 38px; border-radius: 50%; border: none;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; transition: background 0.15s, transform 0.1s;
+}
+.send-btn:hover { background: var(--accent-dk); }
+.send-btn:active { transform: scale(0.91); }
+
+/* Emoji picker */
+#emoji-picker {
+  position: absolute; bottom: 68px; left: 52px;
+  background: var(--panel-bg); border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px; z-index: 100; display: none;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.14);
+}
+#emoji-picker.open { display: block; }
+.egrid { display: grid; grid-template-columns: repeat(8, 36px); gap: 2px; }
+.ebtn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 22px; border-radius: 8px; cursor: pointer; background: none; border: none; transition: background 0.1s; }
+.ebtn:hover { background: var(--hover); }
+
+/* Reactions */
+.reaction-bar {
+  position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
+  background: #fff; border: 1px solid var(--border); border-radius: 24px;
+  padding: 4px 8px; display: none; gap: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 10; white-space: nowrap;
+}
+.mrow:hover .reaction-bar { display: flex; }
+.rbtn { font-size: 22px; cursor: pointer; padding: 2px 3px; border-radius: 8px; transition: transform 0.15s; }
+.rbtn:hover { transform: scale(1.25); }
+.reaction-badge {
+  position: absolute; bottom: -10px; right: 6px;
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 1px 5px; font-size: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* Animations */
+@keyframes msgIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.new-msg { animation: msgIn 0.16s ease; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  #nav-strip { display: none; }
+  #sidebar { width: 100%; max-width: 100%; }
+  #sidebar.mob-hide { display: none; }
+  #main { position: absolute; inset: 0; display: none; }
+  #main.mob-show { display: flex; }
+  #back-btn { display: flex !important; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- NAV STRIP -->
+  <div id="nav-strip">
+    <div class="nav-logo">
+      <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
+        <rect width="40" height="40" rx="10" fill="rgba(255,255,255,0.15)"/>
+        <path d="M20 8C13.37 8 8 13.37 8 20c0 2.11.55 4.1 1.52 5.82L8 32l6.37-1.5A11.93 11.93 0 0 0 20 32c6.63 0 12-5.37 12-12S26.63 8 20 8z" fill="#fff"/>
+        <path d="M26.5 22.5c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.15-.17.2-.34.22-.64.07-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.6-.9-2.2-.24-.58-.48-.5-.66-.51H17c-.2 0-.52.07-.79.37-.27.3-1.03 1-1.03 2.44s1.05 2.83 1.2 3.03c.15.2 2.07 3.16 5.01 4.43.7.3 1.25.48 1.68.62.7.22 1.34.19 1.84.12.56-.08 1.75-.72 2-1.4.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.34z" fill="var(--accent)"/>
+      </svg>
+    </div>
+    <button class="nav-btn active">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="nav-btn-label">Chats</span>
+    </button>
+    <button class="nav-btn">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="nav-btn-label">Contacts</span>
+    </button>
+    <button class="nav-btn">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span class="nav-btn-label">Groups</span>
+    </button>
+    <button class="nav-btn">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-btn-label">Cloud</span>
+    </button>
+    <div style="flex:1;"></div>
+    <button class="nav-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      <span class="nav-btn-label">Settings</span>
+    </button>
+    <div class="nav-avatar">H</div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div id="sidebar-top">
+      <div class="search-wrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-sec)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="search-input" type="text" placeholder="Search" autocomplete="off">
+      </div>
+    </div>
+    <div id="filter-row">
+      <button class="ftab active" data-f="all">All</button>
+      <button class="ftab" data-f="unread">Unread</button>
+      <button class="ftab" data-f="groups">Groups</button>
+    </div>
+    <div id="chat-list"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="empty-state">
+      <div class="empty-logo">
+        <svg width="52" height="52" viewBox="0 0 40 40" fill="none">
+          <path d="M20 4C11.16 4 4 11.16 4 20c0 2.64.69 5.13 1.9 7.27L4 36l8.97-1.88A15.9 15.9 0 0 0 20 36c8.84 0 16-7.16 16-16S28.84 4 20 4z" fill="var(--accent)"/>
+          <path d="M27.5 23.5c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.15-.17.2-.34.22-.64.07-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.6-.9-2.2-.24-.58-.48-.5-.66-.51H18c-.2 0-.52.07-.79.37-.27.3-1.03 1-1.03 2.44s1.05 2.83 1.2 3.03c.15.2 2.07 3.16 5.01 4.43.7.3 1.25.48 1.68.62.7.22 1.34.19 1.84.12.56-.08 1.75-.72 2-1.4.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.34z" fill="#fff"/>
+        </svg>
+      </div>
+      <div class="empty-title">Zalo</div>
+      <div class="empty-sub">Select a conversation to start chatting</div>
+    </div>
+
+    <div id="chat-view">
+      <div id="chat-header">
+        <button class="icon-btn" id="back-btn" style="display:none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div id="h-avatar"></div>
+        <div class="h-info">
+          <div class="h-name" id="h-name"></div>
+          <div class="h-status" id="h-status"></div>
+        </div>
+        <div class="h-actions">
+          <button class="icon-btn" title="Call">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </button>
+          <button class="icon-btn" title="Video call">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          </button>
+          <button class="icon-btn" title="Search">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </button>
+          <button class="icon-btn" title="More">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="msgs"></div>
+      <div id="typing"><div class="typing-bbl"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div></div>
+
+      <div id="input-area">
+        <button class="in-btn" title="Attach file">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <button class="in-btn" id="emoji-btn" title="Sticker/Emoji">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        </button>
+        <button class="in-btn" title="Image">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </button>
+        <div class="input-pill">
+          <textarea id="msg-input" rows="1" placeholder="Type a message..."></textarea>
+        </div>
+        <button class="send-btn" id="send-btn">
+          <svg id="send-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <svg id="like-icon" width="20" height="20" viewBox="0 0 24 24" fill="white" style="display:none;"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" fill="white"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="emoji-picker">
+  <div class="egrid" id="egrid"></div>
+</div>
+
+<script>
+const EMOJIS = ['😀','😂','😍','🥰','😎','🤔','😅','🙏','👍','❤️','🔥','✨','🎉','💯','😭','🤣','😊','😇','🥺','😏','😤','🤦','🤷','💪','👏','🙌','🎊','💥','🌟','⭐','💫','🌈','🦋','🌺','🍀','🎯','💡','🚀','💎','🏆'];
+const REACTIONS = ['❤️','😂','😮','😢','😡','👍'];
+
+const C = {
+  blue:'#006AF5', purple:'#8e44ad', green:'#27ae60',
+  orange:'#e67e22', pink:'#e84393', teal:'#16a085',
+  violet:'#9b59b6', red:'#e54949', yellow:'#f39c12',
+  indigo:'#2980b9', mint:'#1abc9c', coral:'#e74c3c'
+};
+
+const WBARS = [10,16,8,22,14,28,10,20,16,30,12,24,18,8,26,14,22,10,28,16,8,24,14,20,12,18,26,14,20,10];
+const waveform = () => WBARS.map(h => `<div class="wbar" style="height:${h}px"></div>`).join('');
+
+const convs = [
+  {
+    id: 1, name: 'Dev Team VN', type: 'group',
+    av: { bg: C.blue, t: 'DT' }, status: '8 members', isGroup: true,
+    last: 'Bảo: Đã deploy xong rồi! 🚀', lastT: '12:30', unread: 4,
+    msgs: [
+      { k:'date', text:'Monday' },
+      { k:'sys', text:'Lê Thị Hoa joined the group' },
+      { k:'r', sn:'Minh Khoa', sc:C.indigo, sa:'MK', text:'Chào buổi sáng mọi người! Sprint review hôm nay nhé ☀️', t:'Mon 09:00' },
+      { k:'r', sn:'Thị Lan', sc:C.pink, sa:'TL', text:'Ready! Mình đã chuẩn bị slides xong rồi 💪', t:'Mon 09:02', notail:true },
+      { k:'s', text:'Perfect, meeting room B lúc 10h nhé', t:'Mon 09:05', rd:true },
+      { k:'r', sn:'Quốc Bảo', sc:C.orange, sa:'QB',
+        mt:'image', grad:'linear-gradient(135deg,#667eea,#764ba2)',
+        cap:'UI mockups mới cho dashboard analytics', t:'Mon 14:20' },
+      { k:'r', sn:'Minh Khoa', sc:C.indigo, sa:'MK', mt:'voice', dur:'1:15', t:'Mon 14:35' },
+      { k:'s', reply:{name:'Quốc Bảo', text:'UI mockups mới cho dashboard analytics'},
+        text:'Design rất clean! Mình thích phần chart ở góc phải 👌', t:'Mon 14:40', rd:true },
+      { k:'r', sn:'Thị Lan', sc:C.pink, sa:'TL',
+        fwd:'Design Resources',
+        text:'Chia sẻ resource Figma component library này nhé!', t:'Mon 15:10' },
+      { k:'r', sn:'Quốc Bảo', sc:C.orange, sa:'QB', mt:'sticker', emoji:'🔥', t:'Mon 15:12' },
+      { k:'date', text:'Yesterday' },
+      { k:'r', sn:'Minh Khoa', sc:C.indigo, sa:'MK',
+        mt:'video', grad:'linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)',
+        dur:'2:08', t:'Yesterday 10:30' },
+      { k:'s', text:'Video review rất chi tiết Khoa ơi! Cảm ơn nhé 🎉', t:'Yesterday 10:48', rd:true },
+      { k:'call', ct:'outgoing', dur:'8:42', t:'Yesterday 15:00' },
+      { k:'call', ct:'incoming', dur:'3:17', t:'Yesterday 16:45' },
+      { k:'call', ct:'missed', t:'Yesterday 19:30' },
+      { k:'date', text:'Today' },
+      { k:'r', sn:'Quốc Bảo', sc:C.orange, sa:'QB', text:'Đã deploy xong rồi! 🚀', t:'12:30' },
+    ]
+  },
+  {
+    id: 2, name: 'Nguyễn Minh Khoa', type: 'personal',
+    av: { bg: C.indigo, t: 'NK' }, online: true, status: 'Online',
+    last: 'Ok mình sẽ check lại nhé!', lastT: '11:52', unread: 1,
+    msgs: [
+      { k:'date', text:'Today' },
+      { k:'s', text:'Khoa ơi, có thể review PR #142 giúp mình không?', t:'11:45', rd:true },
+      { k:'r', text:'Để mình xem qua, sẽ feedback trong hôm nay nhé', t:'11:50' },
+      { k:'s', text:'Cảm ơn! Có vài logic phức tạp ở file auth.service.ts', t:'11:51', rd:true },
+      { k:'r', text:'Ok mình sẽ check lại nhé!', t:'11:52' },
+    ]
+  },
+  {
+    id: 3, name: 'Trần Thị Lan', type: 'personal',
+    av: { bg: C.pink, t: 'TL' }, status: 'Last seen 2 hours ago',
+    last: 'Gửi file design cho mình nhé 🎨', lastT: '09:30', unread: 0,
+    msgs: [
+      { k:'date', text:'Today' },
+      { k:'r', text:'Gửi file design cho mình nhé 🎨', t:'09:30' },
+      { k:'s', text:'Ok! Mình sẽ gửi sau khi export xong', t:'09:32', rd:true },
+    ]
+  },
+  {
+    id: 4, name: 'Zalo Official', type: 'channel',
+    av: { bg: C.blue, t: 'ZO' }, status: 'Official Account',
+    last: 'Zalo cập nhật tính năng mới!', lastT: '08:00', unread: 2,
+    msgs: [
+      { k:'date', text:'Today' },
+      { k:'r', text: 'Zalo vừa ra mắt tính năng gọi nhóm video HD lên đến 8 người. Cập nhật ngay để trải nghiệm!', t:'08:00' },
+    ]
+  },
+  {
+    id: 5, name: 'Phạm Quốc Bảo', type: 'personal',
+    av: { bg: C.orange, t: 'QB' }, online: true, status: 'Online',
+    last: 'Build pass rồi, deploy nhé!', lastT: '12:28', unread: 0,
+    msgs: [
+      { k:'date', text:'Today' },
+      { k:'r', text: 'Mình fix xong bug authentication rồi nhé', t:'11:00' },
+      { k:'s', text: 'Chạy test chưa?', t:'11:05', rd:true },
+      { k:'r', text: 'Rồi, 98% pass. 2% còn lại là integration test timeout', t:'11:08' },
+      { k:'s', text: 'Ok chấp nhận được. Merge vào develop đi', t:'11:10', rd:true },
+      { k:'r', text: 'Build pass rồi, deploy nhé!', t:'12:28' },
+    ]
+  },
+  {
+    id: 6, name: 'Backend Team', type: 'group',
+    av: { bg: C.teal, t: 'BT' }, status: '5 members', isGroup: true,
+    last: 'Đức: API docs đã update xong', lastT: 'Yesterday', unread: 0,
+    msgs: [
+      { k:'date', text:'Yesterday' },
+      { k:'r', sn:'Minh Đức', sc:C.teal, sa:'MD', text:'API docs đã update xong, review nhé team!', t:'Yesterday 17:00' },
+    ]
+  },
+  {
+    id: 7, name: 'Lê Thị Hoa', type: 'personal',
+    av: { bg: C.mint, t: 'LH' }, online: true, status: 'Online',
+    last: 'Thanks, mình đã nhận được rồi nhé', lastT: '10:15', unread: 0,
+    msgs: [
+      { k:'date', text:'Today' },
+      { k:'s', text: 'Gửi bạn tài liệu onboarding nha', t:'10:10', rd:true },
+      { k:'r', text: 'Thanks, mình đã nhận được rồi nhé', t:'10:15' },
+    ]
+  },
+  {
+    id: 8, name: 'AI Club VN', type: 'group',
+    av: { bg: C.purple, t: 'AI' }, status: '234 members', isGroup: true,
+    last: 'Nam: Chia sẻ paper mới về LLM agents', lastT: 'Yesterday', unread: 7,
+    msgs: [
+      { k:'date', text:'Yesterday' },
+      { k:'r', sn:'Văn Nam', sc:C.violet, sa:'VN',
+        fwd:'AI Research Papers',
+        text:'Chia sẻ paper mới về LLM agents và planning capabilities', t:'Yesterday 20:00' },
+    ]
+  },
+  {
+    id: 9, name: 'Hoàng Văn Nam', type: 'personal',
+    av: { bg: C.violet, t: 'HN' }, status: 'Last seen yesterday',
+    last: 'Mình sẽ present vào thứ 6 nhé', lastT: 'Yesterday', unread: 0,
+    msgs: [
+      { k:'date', text:'Yesterday' },
+      { k:'r', text: 'Mình sẽ present vào thứ 6 nhé', t:'Yesterday 18:00' },
+    ]
+  },
+  {
+    id: 10, name: 'Zalo Pay', type: 'channel',
+    av: { bg: C.blue, t: 'ZP' }, status: 'Official Account',
+    last: 'Bạn đã nhận 50,000đ từ Minh Khoa', lastT: '07:30', unread: 1,
+    msgs: [
+      { k:'date', text:'Today' },
+      { k:'r', text: '💳 Thông báo giao dịch\nBạn đã nhận 50,000đ từ Nguyễn Minh Khoa\nSố dư: 1,250,000đ', t:'07:30' },
+    ]
+  },
+  {
+    id: 11, name: 'Võ Thị Thu', type: 'personal',
+    av: { bg: C.coral, t: 'VT' }, status: 'Last seen 3 hours ago',
+    last: 'Nhớ deadline chiều nay nha!', lastT: 'Monday', unread: 0,
+    msgs: [
+      { k:'date', text:'Monday' },
+      { k:'r', text: 'Nhớ deadline chiều nay nha!', t:'Mon 08:00' },
+      { k:'s', text: 'Nhớ rồi, đang hoàn thiện phần cuối', t:'Mon 08:05', rd:true },
+    ]
+  },
+  {
+    id: 12, name: 'Ngô Minh Đức', type: 'personal',
+    av: { bg: C.green, t: 'ND' }, status: 'Last seen Monday',
+    last: 'Server response time giảm 40% sau khi optimize!', lastT: 'Monday', unread: 0,
+    msgs: [
+      { k:'date', text:'Monday' },
+      { k:'r', text: 'Server response time giảm 40% sau khi optimize Redis caching! 🎉', t:'Mon 16:00' },
+      { k:'s', text: 'Tuyệt vời! Chia sẻ approach cho team nhé', t:'Mon 16:05', rd:true },
+    ]
+  }
+];
+
+let activeId = null;
+let activeFilter = 'all';
+let emojiOpen = false;
+
+// ── Render list ──
+function renderList(filter, search) {
+  filter = filter || activeFilter;
+  search = (search || '').toLowerCase();
+  const list = document.getElementById('chat-list');
+
+  let items = convs.filter(c => {
+    if (search) return c.name.toLowerCase().includes(search) || c.last.toLowerCase().includes(search);
+    if (filter === 'unread') return c.unread > 0;
+    if (filter === 'groups') return c.type === 'group';
+    return true;
+  });
+
+  list.innerHTML = items.map(c => {
+    const dotHtml = c.online ? '<div class="dot"></div>' : '';
+    const badge = c.unread ? `<span class="ubadge">${c.unread}</span>` : '';
+    const tc = c.unread ? 'unread-t' : '';
+    const pc = c.unread ? 'bold' : '';
+    return `
+      <div class="chat-item${c.id===activeId?' active':''}" data-id="${c.id}">
+        <div class="avatar" style="background:${c.av.bg}">${c.av.t}${dotHtml}</div>
+        <div class="chat-content">
+          <div class="chat-r1">
+            <div class="chat-name">${c.name}</div>
+            <div class="chat-time ${tc}">${c.lastT}</div>
+          </div>
+          <div class="chat-r2">
+            <div class="chat-prev ${pc}">${c.last}</div>
+            <div>${badge}</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('.chat-item').forEach(el => {
+    el.addEventListener('click', () => openChat(+el.dataset.id));
+  });
+}
+
+// ── Render messages ──
+function renderMsgs(conv) {
+  const area = document.getElementById('msgs');
+  let html = '';
+  const ms = conv.msgs;
+
+  for (let i = 0; i < ms.length; i++) {
+    const m = ms[i];
+    const next = ms[i + 1];
+
+    if (m.k === 'date') { html += `<div class="date-sep"><span>${m.text}</span></div>`; continue; }
+    if (m.k === 'sys')  { html += `<div class="sys-msg"><span>${m.text}</span></div>`; continue; }
+    if (m.k === 'call') { html += buildCall(m); continue; }
+
+    const sent = m.k === 's';
+    const dir = sent ? 'sent' : 'recv';
+    const sameNext = next && next.k === m.k && next.sn === m.sn && next.k !== 'date' && next.k !== 'sys' && next.k !== 'call';
+    const noTail = m.notail || sameNext;
+    const isLastSent = sent && (!next || next.k === 'date' || next.k === 'sys' || next.k === 'call' || next.k === 'r');
+
+    let avHtml = '';
+    if (!sent && conv.isGroup) {
+      const isLast = !sameNext;
+      avHtml = isLast
+        ? `<div class="msg-avatar-sm" style="background:${m.sc||'#999'}">${m.sa||'?'}</div>`
+        : `<div class="msg-avatar-sm invis"></div>`;
+    }
+
+    let inner = '';
+    const samePrev = i > 0 && ms[i-1].k === m.k && ms[i-1].sn === m.sn;
+
+    if (!sent && conv.isGroup && m.sn && !samePrev) {
+      inner += `<div class="sender-name" style="color:${m.sc}">${m.sn}</div>`;
+    }
+    if (m.fwd) {
+      inner += `<div class="fwd-label"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>Forwarded from <strong>${m.fwd}</strong></div>`;
+    }
+    if (m.reply) {
+      inner += `<div class="rquote"><div class="rquote-name">${m.reply.name}</div><div class="rquote-text">${m.reply.text}</div></div>`;
+    }
+
+    const mt = m.mt;
+
+    if (mt === 'sticker') {
+      html += `<div class="mrow ${dir}${noTail?' notail':''} gstart" style="align-items:flex-end;gap:6px">${avHtml}<div class="bubble sticker-bubble"><span class="sticker-emoji">${m.emoji}</span><div class="meta"><span class="meta-time">${m.t}</span></div></div></div>`;
+      continue;
+    }
+    if (mt === 'image') {
+      inner += `<div class="img-msg"><div class="img-thumb" style="background:${m.grad}"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><div class="img-overlay"><span class="meta-time">${m.t}</span></div></div>${m.cap?`<div class="img-caption">${m.cap}</div>`:''}</div>`;
+      html += `<div class="mrow ${dir}${noTail?' notail':''} gstart" style="align-items:flex-end;gap:6px">${avHtml}<div class="bubble" style="padding:4px">${inner}</div></div>`;
+      continue;
+    }
+    if (mt === 'video') {
+      inner += `<div class="video-msg"><div class="video-thumb" style="background:${m.grad}"><div class="play-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div><div class="video-dur">${m.dur||'0:30'}</div><div class="img-overlay"><span class="meta-time">${m.t}</span></div></div></div>`;
+      html += `<div class="mrow ${dir}${noTail?' notail':''} gstart" style="align-items:flex-end;gap:6px">${avHtml}<div class="bubble" style="padding:4px">${inner}</div></div>`;
+      continue;
+    }
+    if (mt === 'voice') {
+      inner += `<div class="voice-msg"><div class="v-play"><svg width="14" height="14" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg></div><div class="waveform">${waveform()}</div><span class="v-dur">${m.dur||'0:30'}</span></div>`;
+    } else if (m.text) {
+      inner += `<div class="msg-text">${m.text.replace(/\n/g,'<br>')}</div>`;
+    }
+
+    inner += `<div class="meta"><span class="meta-time">${m.t}</span></div>`;
+
+    // Reaction bar
+    const reactionBar = `<div class="reaction-bar">${REACTIONS.map(r=>`<span class="rbtn">${r}</span>`).join('')}</div>`;
+
+    html += `<div class="mrow ${dir}${noTail?' notail':''} gstart" style="align-items:flex-end;gap:6px;position:relative">${avHtml}${reactionBar}<div class="bubble">${inner}</div></div>`;
+
+    // Seen indicator under last sent message with rd flag
+    if (sent && m.rd && isLastSent && conv.readBy) {
+      html += `<div class="seen-row">${conv.readBy.map(r=>`<div class="seen-av" style="background:${r.c}" title="${r.name}">${r.i}</div>`).join('')}</div>`;
+    }
+  }
+
+  area.innerHTML = html;
+  area.scrollTop = area.scrollHeight;
+
+  // Waveform click
+  area.querySelectorAll('.waveform').forEach(wf => {
+    wf.addEventListener('click', () => {
+      wf.querySelectorAll('.wbar').forEach((b,i) => b.classList.toggle('played', i < 15));
+    });
+  });
+
+  // Reactions
+  area.querySelectorAll('.rbtn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const row = btn.closest('.mrow');
+      let badge = row.querySelector('.reaction-badge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'reaction-badge';
+        row.style.position = 'relative';
+        row.querySelector('.bubble').appendChild(badge);
+      }
+      badge.textContent = btn.textContent + ' 1';
+    });
+  });
+}
+
+function buildCall(m) {
+  const isSent = m.ct === 'outgoing';
+  const cfg = {
+    incoming: { cls:'inc', label:'Incoming Call', ic:'#26cc5a', arrow:'↙' },
+    outgoing: { cls:'out', label:'Outgoing Call', ic:'#006AF5', arrow:'↗' },
+    missed:   { cls:'miss', label:'Missed Call',   ic:'#e54949', arrow:'↙' },
+  }[m.ct];
+
+  const phoneIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" stroke="${cfg.ic}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const sub = m.dur ? `${cfg.arrow} ${m.dur}` : `${cfg.arrow} Tap to call back`;
+
+  return `<div class="mrow ${isSent?'sent':'recv'} gstart"><div class="bubble"><div class="call-bubble"><div class="call-ico ${cfg.cls}">${phoneIcon}</div><div class="call-info"><div class="call-title${m.ct==='missed'?' miss':''}">${cfg.label}</div><div class="call-sub">${sub}</div></div></div><div class="meta"><span class="meta-time">${m.t}</span></div></div></div>`;
+}
+
+// ── Open chat ──
+function openChat(id) {
+  activeId = id;
+  const conv = convs.find(c => c.id === id);
+  if (!conv) return;
+  conv.unread = 0;
+
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('chat-view').classList.add('open');
+
+  const hav = document.getElementById('h-avatar');
+  hav.style.background = conv.av.bg;
+  hav.textContent = conv.av.t;
+
+  document.getElementById('h-name').textContent = conv.name;
+  const hs = document.getElementById('h-status');
+  hs.textContent = conv.status || '';
+  hs.className = 'h-status' + (conv.online ? ' on' : '');
+
+  renderMsgs(conv);
+  renderList();
+
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.add('mob-hide');
+    document.getElementById('main').classList.add('mob-show');
+    document.getElementById('back-btn').style.display = 'flex';
+  }
+}
+
+// ── Send ──
+function sendMsg() {
+  const inp = document.getElementById('msg-input');
+  const text = inp.value.trim();
+  if (!text || !activeId) return;
+
+  const conv = convs.find(c => c.id === activeId);
+  if (!conv) return;
+
+  conv.msgs.push({ k:'s', text, t:now(), rd:true });
+  conv.last = text; conv.lastT = now();
+
+  inp.value = '';
+  inp.style.height = '';
+  updateBtn();
+  renderMsgs(conv);
+  renderList();
+
+  const area = document.getElementById('msgs');
+  const typing = document.getElementById('typing');
+
+  setTimeout(() => { typing.style.display = 'block'; area.scrollTop = area.scrollHeight; }, 500);
+
+  setTimeout(() => {
+    typing.style.display = 'none';
+    const replies = ['Ok nhé!','Mình check liền!','Hiểu rồi 👍','Sẽ làm ngay','Oke! 🚀','Cảm ơn bạn!','Tuyệt vời!','Để mình xem'];
+    const rep = replies[Math.floor(Math.random() * replies.length)];
+
+    if (conv.isGroup && conv.msgs.some(m => m.sn)) {
+      const snds = conv.msgs.filter(m => m.sn);
+      const s = snds[Math.floor(Math.random() * snds.length)];
+      conv.msgs.push({ k:'r', sn:s.sn, sc:s.sc, sa:s.sa, text:rep, t:now() });
+    } else {
+      conv.msgs.push({ k:'r', text:rep, t:now() });
+    }
+    conv.last = rep; conv.lastT = now();
+    renderMsgs(conv); renderList();
+  }, 1200 + Math.random() * 800);
+}
+
+function now() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function updateBtn() {
+  const hasText = document.getElementById('msg-input').value.trim().length > 0;
+  document.getElementById('send-icon').style.display = hasText ? '' : 'none';
+  document.getElementById('like-icon').style.display = hasText ? 'none' : '';
+}
+
+// ── Events ──
+document.querySelectorAll('.ftab').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.ftab').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    activeFilter = b.dataset.f;
+    renderList();
+  });
+});
+
+document.getElementById('search-input').addEventListener('input', e => renderList(activeFilter, e.target.value));
+document.getElementById('send-btn').addEventListener('click', () => {
+  if (document.getElementById('msg-input').value.trim()) sendMsg();
+});
+document.getElementById('msg-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+document.getElementById('msg-input').addEventListener('input', function() {
+  this.style.height = '';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  updateBtn();
+});
+
+document.getElementById('emoji-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  emojiOpen = !emojiOpen;
+  document.getElementById('emoji-picker').classList.toggle('open', emojiOpen);
+});
+document.addEventListener('click', () => {
+  emojiOpen = false;
+  document.getElementById('emoji-picker').classList.remove('open');
+});
+document.getElementById('emoji-picker').addEventListener('click', e => e.stopPropagation());
+document.getElementById('back-btn').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('mob-hide');
+  document.getElementById('main').classList.remove('mob-show');
+  document.getElementById('chat-view').classList.remove('open');
+  document.getElementById('empty-state').style.display = 'flex';
+  document.getElementById('back-btn').style.display = 'none';
+  activeId = null; renderList();
+});
+
+// ── Init ──
+document.getElementById('egrid').innerHTML = EMOJIS.map(e => `<button class="ebtn">${e}</button>`).join('');
+document.querySelectorAll('.ebtn').forEach(b => {
+  b.addEventListener('click', () => {
+    const inp = document.getElementById('msg-input');
+    inp.value += b.textContent; inp.focus(); updateBtn();
+    emojiOpen = false;
+    document.getElementById('emoji-picker').classList.remove('open');
+  });
+});
+
+updateBtn();
+renderList('all');
+openChat(1);
+</script>
+</body>
+</html>
