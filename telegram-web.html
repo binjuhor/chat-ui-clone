@@ -246,8 +246,8 @@ html, body { height: 100%; background: var(--bg-deep); font-family: var(--font);
 
 /* Image */
 .img-msg {
-  width: 280px; border-radius: 8px; overflow: hidden;
-  margin: -2px -6px; cursor: pointer; position: relative;
+  width: calc(100% + 8px); border-radius: 8px; overflow: hidden;
+  margin: -4px -4px; cursor: zoom-in; position: relative;
 }
 .img-thumb {
   width: 100%; height: 196px; display: flex;
@@ -263,8 +263,8 @@ html, body { height: 100%; background: var(--bg-deep); font-family: var(--font);
 
 /* Video */
 .video-msg {
-  width: 280px; height: 196px; border-radius: 8px; overflow: hidden;
-  margin: -2px -6px; cursor: pointer; position: relative;
+  width: calc(100% + 8px); height: 196px; border-radius: 8px; overflow: hidden;
+  margin: -4px -4px; cursor: pointer; position: relative;
 }
 .video-thumb { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
 .play-btn {
@@ -376,6 +376,9 @@ html, body { height: 100%; background: var(--bg-deep); font-family: var(--font);
   #main.mob-show { display: flex; }
   #back-btn { display: flex !important; }
 }
+#lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:9999; align-items:center; justify-content:center; cursor:zoom-out; }
+#lb-img { width:min(560px,90vw); aspect-ratio:4/3; border-radius:14px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; font-size:80px; animation:lb-pop 0.18s ease; }
+@keyframes lb-pop { from { transform:scale(0.85); opacity:0 } to { transform:scale(1); opacity:1 } }
 </style>
 </head>
 <body>
@@ -735,7 +738,7 @@ function renderMsgs(conv) {
     }
 
     if (mt === 'image') {
-      inner += `<div class="img-msg"><div class="img-thumb" style="background:${m.grad}"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><div class="img-overlay-meta"><span class="meta-time">${m.t}</span>${sent?ticks(m.rd||'single'):''}</div></div>${m.cap?`<div class="img-caption">${m.cap}</div>`:''}</div>`;
+      inner += `<div class="img-msg" onclick="openLightbox('${m.grad}','🖼️')"><div class="img-thumb" style="background:${m.grad}"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><div class="img-overlay-meta"><span class="meta-time">${m.t}</span>${sent?ticks(m.rd||'single'):''}</div></div>${m.cap?`<div class="img-caption">${m.cap}</div>`:''}</div>`;
       html += `<div class="mrow ${dir}${noTail?' notail':''} gstart" style="align-items:flex-end;gap:4px;">${avHtml}<div class="bubble" style="padding:4px;">${inner}</div></div>`;
       continue;
     }
@@ -937,7 +940,16 @@ document.querySelectorAll('.ebtn').forEach(b => {
 
 updateSendBtn();
 renderList('all');
-openChat(1); // Open Design Squad — shows all message types
+openChat(1);
+
+function openLightbox(grad, emoji) {
+  const el = document.getElementById('lb-img');
+  el.style.background = grad; el.textContent = emoji || '🖼️';
+  document.getElementById('lightbox').style.display = 'flex';
+}
+function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; }
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(); });
 </script>
+<div id="lightbox" onclick="closeLightbox()"><div id="lb-img"></div></div>
 </body>
 </html>

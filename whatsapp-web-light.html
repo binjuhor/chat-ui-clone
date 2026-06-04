@@ -169,7 +169,7 @@
   .bubble-text { font-size: 14.2px; color: var(--text-primary); line-height: 1.45; padding-right: 48px; }
   .bubble-meta {
     display: flex; align-items: center; justify-content: flex-end;
-    gap: 3px; margin-top: -6px; float: right; clear: both; margin-left: 8px;
+    gap: 3px; margin-top: 2px; float: right; clear: both; margin-left: 8px;
   }
   .msg-time { font-size: 11px; color: rgba(17,27,33,0.45); white-space: nowrap; }
   .msg-row.recv .msg-time { color: var(--text-secondary); }
@@ -562,6 +562,9 @@
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .msg-row.recv .bubble { border: 1px solid #e9edef; }
+  #lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:9999; align-items:center; justify-content:center; cursor:zoom-out; }
+  #lb-img { width:min(560px,90vw); aspect-ratio:4/3; border-radius:14px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; font-size:80px; animation:lb-pop 0.18s ease; }
+  @keyframes lb-pop { from { transform:scale(0.85); opacity:0 } to { transform:scale(1); opacity:1 } }
 </style>
 </head>
 <body>
@@ -1099,7 +1102,7 @@ function renderAudioBubble(m) {
 
 function renderImageBubble(m) {
   return `<div class="img-bubble">
-    <div class="img-bubble-inner" onclick="showToast('Opening image...')">
+    <div class="img-bubble-inner" onclick="openLightbox('${m.gradient||\'linear-gradient(135deg,#1a6b5a,#2eb872)\'}','${m.emoji||\'🖼️\'}')" style="cursor:zoom-in">
       <div class="img-placeholder" style="background:${m.gradient||'linear-gradient(135deg,#1a6b5a,#2eb872)'}">
         <span style="font-size:52px;opacity:.7">${m.emoji||'🖼️'}</span>
       </div>
@@ -1583,6 +1586,15 @@ document.addEventListener('click',e=>{
 document.getElementById('emoji-grid').innerHTML=EMOJIS.map(e=>`<button class="emoji-btn" onclick="insertEmoji('${e}')">${e}</button>`).join('');
 renderChatList();
 openChat(1);
+
+function openLightbox(grad, emoji) {
+  const el = document.getElementById('lb-img');
+  el.style.background = grad; el.textContent = emoji || '🖼️';
+  document.getElementById('lightbox').style.display = 'flex';
+}
+function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; }
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(); });
 </script>
+<div id="lightbox" onclick="closeLightbox()"><div id="lb-img"></div></div>
 </body>
 </html>

@@ -388,6 +388,9 @@ html, body { height: 100%; background: var(--bg); font-family: var(--font); over
   .back-btn { display: flex !important; }
 }
 .back-btn { display: none; }
+#lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:9999; align-items:center; justify-content:center; cursor:zoom-out; }
+#lb-img { width:min(560px,90vw); aspect-ratio:4/3; border-radius:14px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; font-size:80px; animation:lb-pop 0.18s ease; }
+@keyframes lb-pop { from { transform:scale(0.85); opacity:0 } to { transform:scale(1); opacity:1 } }
 </style>
 </head>
 <body>
@@ -866,7 +869,8 @@ function buildBubble(m, senderLine, emojiOnly) {
   if (m.type === 'image') {
     const caption = m.caption ? `<div class="img-caption-txt">${escHtml(m.caption)}</div>` : '';
     return `<div class="bubble img-msg" id="bubble-${m.id}">
-      <div class="img-thumb" style="background:${m.imgGrad}">
+      <div class="img-thumb" style="background:${m.imgGrad};cursor:zoom-in" onclick="openLightbox('${m.imgGrad}','${m.imgLabel||'🖼️'}')">`  +
+`
         <span class="img-icon">${m.imgLabel}</span>
         <div class="img-time">${fmtTime(m.time)}</div>
       </div>
@@ -1026,6 +1030,15 @@ initEmoji();
 renderActiveStrip();
 renderChatList();
 openChat(1);
+
+function openLightbox(grad, emoji) {
+  const el = document.getElementById('lb-img');
+  el.style.background = grad; el.textContent = emoji || '🖼️';
+  document.getElementById('lightbox').style.display = 'flex';
+}
+function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; }
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(); });
 </script>
+<div id="lightbox" onclick="closeLightbox()"><div id="lb-img"></div></div>
 </body>
 </html>
