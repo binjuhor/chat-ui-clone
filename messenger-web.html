@@ -745,7 +745,7 @@ function openChat(id) {
 }
 
 // ── RENDER MESSAGES ───────────────────────────────
-const isEmojiOnly = t => /^[\p{Emoji}\s]{1,5}$/u.test(t.trim()) && t.trim().length <= 8;
+const isEmojiOnly = t => !!t && /^[\p{Emoji}\s]{1,5}$/u.test(t.trim()) && t.trim().length <= 8;
 
 function groupByDate(msgs) {
   const groups = [];
@@ -869,8 +869,7 @@ function buildBubble(m, senderLine, emojiOnly) {
   if (m.type === 'image') {
     const caption = m.caption ? `<div class="img-caption-txt">${escHtml(m.caption)}</div>` : '';
     return `<div class="bubble img-msg" id="bubble-${m.id}">
-      <div class="img-thumb" style="background:${m.imgGrad};cursor:zoom-in" onclick="openLightbox('${m.imgGrad}','${m.imgLabel||'🖼️'}')">`  +
-`
+      <div class="img-thumb" style="background:${m.imgGrad};cursor:zoom-in" onclick="openLightbox('${m.imgGrad}','${m.imgLabel||'🖼️'}')">
         <span class="img-icon">${m.imgLabel}</span>
         <div class="img-time">${fmtTime(m.time)}</div>
       </div>

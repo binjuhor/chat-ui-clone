@@ -1102,7 +1102,7 @@ function renderAudioBubble(m) {
 
 function renderImageBubble(m) {
   return `<div class="img-bubble">
-    <div class="img-bubble-inner" onclick="openLightbox('${m.gradient||\'linear-gradient(135deg,#1a6b5a,#2eb872)\'}','${m.emoji||\'🖼️\'}')" style="cursor:zoom-in">
+    <div class="img-bubble-inner" onclick="openLightbox('${m.gradient||'linear-gradient(135deg,#1a6b5a,#2eb872)'}','${m.emoji||'🖼️'}')" style="cursor:zoom-in">
       <div class="img-placeholder" style="background:${m.gradient||'linear-gradient(135deg,#1a6b5a,#2eb872)'}">
         <span style="font-size:52px;opacity:.7">${m.emoji||'🖼️'}</span>
       </div>
