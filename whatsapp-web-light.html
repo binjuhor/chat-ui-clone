@@ -135,7 +135,7 @@
   .chat-header-icons { display: flex; gap: 4px; }
   #messages {
     flex: 1; overflow-y: auto; padding: 12px 6% 12px;
-    display: flex; flex-direction: column; gap: 2px;
+    display: flex; flex-direction: column; gap: 16px;
     position: relative; z-index: 1;
     scrollbar-width: thin; scrollbar-color: var(--bg-input) transparent;
   }
@@ -166,7 +166,7 @@
     width: 0; height: 0; border-style: solid;
     border-width: 0 8px 8px 0; border-color: transparent var(--bg-recv) transparent transparent;
   }
-  .bubble-text { font-size: 14.2px; color: var(--text-primary); line-height: 1.45; padding-right: 48px; }
+  .bubble-text { font-size: 14.2px; color: var(--text-primary); line-height: 1.45; padding-right: 70px; }
   .bubble-meta {
     display: flex; align-items: center; justify-content: flex-end;
     gap: 3px; margin-top: 2px; float: right; clear: both; margin-left: 8px;
@@ -241,6 +241,22 @@
   }
   .emoji-btn:hover { background: var(--bg-hover); }
   @keyframes fadeSlideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* Reactions */
+  .reaction-bar {
+    position: absolute; bottom: 100%; right: 0; margin-bottom: -6px;
+    background: #fff; border: 1px solid #e9edef; border-radius: 24px;
+    padding: 4px 8px; display: none; gap: 4px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 10; white-space: nowrap;
+  }
+  .bubble:hover .reaction-bar { display: flex; }
+  .rbtn { font-size: 22px; cursor: pointer; padding: 2px 3px; border-radius: 8px; transition: transform 0.15s; background: none; border: none; }
+  .rbtn:hover { transform: scale(1.25); }
+  .reaction-badge {
+    position: absolute; bottom: -16px; right: 6px;
+    background: #fff; border: 1px solid #e9edef; border-radius: 12px;
+    padding: 1px 6px; font-size: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
   .msg-row.new { animation: fadeSlideIn 0.18s ease forwards; }
   .status-dot {
     width: 10px; height: 10px; border-radius: 50%;
@@ -924,6 +940,8 @@ const chats = [
 
 const EMOJIS=['😀','😂','🥰','😍','🤩','😎','🥳','😊','😇','🤣','😭','😱','🙄','😴','🤔','💀','🙏','👍','👎','❤️','🔥','⭐','✅','🎉','🚀','💪','🌟','😅','😬','🤷','🎂','🌈','💯','🤝','👏','🍕','🎮','📱','💻','🎵'];
 
+const REACTIONS = ['❤️','😂','😮','😢','😡','👍'];
+
 let activeChat=null, filter='all', searchQ='';
 let mutedChats=new Set();
 
@@ -1165,8 +1183,10 @@ function renderMessages() {
       <polyline points="1,6 5.5,10.5 17,1" stroke="${tc}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       <polyline points="5,6 9.5,10.5 17,1" stroke="${tc}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" style="transform:translateX(-3px)"/>
     </svg></span>`:'';
+    const reactionBar=`<div class="reaction-bar">${REACTIONS.map(r=>`<button class="rbtn">${r}</button>`).join('')}</div>`;
     return `<div class="msg-row ${side}">
       <div class="bubble${eo?' emoji-only':''}">
+        ${reactionBar}
         ${snd}
         <div class="bubble-text">${escHtml(m.text||'')}</div>
         <div class="bubble-meta"><span class="msg-time">${fmtMsgTime(m.time)}</span>${tick}</div>
@@ -1174,6 +1194,21 @@ function renderMessages() {
     </div>`;
   }).join('');
   c.scrollTop=c.scrollHeight;
+
+  // Reaction click
+  c.querySelectorAll('.rbtn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const bubble = btn.closest('.bubble');
+      let badge = bubble.querySelector('.reaction-badge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'reaction-badge';
+        bubble.appendChild(badge);
+      }
+      badge.textContent = btn.textContent + ' 1';
+    });
+  });
 }
 
 function sendMessage() {
