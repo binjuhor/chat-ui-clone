@@ -383,14 +383,14 @@ html, body { height: 100%; background: var(--bg); font-family: var(--font); over
 .ebtn:hover { background: var(--hover); }
 
 /* Reactions */
+.bubble-pos { position: relative; }
 .reaction-bar {
-  position: absolute; bottom: 100%; left: 0; margin-bottom: 6px;
+  position: absolute; bottom: 100%; right: 0; margin-bottom: 6px;
   background: #fff; border: 1px solid var(--border); border-radius: 24px;
   padding: 4px 8px; display: none; gap: 4px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 10; white-space: nowrap;
 }
-.mrow.sent .reaction-bar { left: auto; right: 0; }
-.mrow:hover .reaction-bar { display: flex; }
+.bubble-pos:hover .reaction-bar { display: flex; }
 .rbtn { font-size: 22px; cursor: pointer; padding: 2px 3px; border-radius: 8px; transition: transform 0.15s; }
 .rbtn:hover { transform: scale(1.25); }
 .reaction-badge {
@@ -810,7 +810,7 @@ function renderMsgs(conv) {
     // Reaction bar
     const reactionBar = `<div class="reaction-bar">${REACTIONS.map(r=>`<span class="rbtn">${r}</span>`).join('')}</div>`;
 
-    html += `<div class="mrow ${dir}${noTail?' notail':''} gstart" style="align-items:flex-end;gap:6px;position:relative">${avHtml}${reactionBar}<div class="bubble">${inner}</div></div>`;
+    html += `<div class="mrow ${dir}${noTail?' notail':''} gstart" style="align-items:flex-end;gap:6px">${avHtml}<div class="bubble-pos">${reactionBar}<div class="bubble">${inner}</div></div></div>`;
 
     // Seen indicator under last sent message with rd flag
     if (sent && m.rd && isLastSent && conv.readBy) {
