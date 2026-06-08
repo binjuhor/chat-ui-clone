@@ -208,7 +208,7 @@ html, body { height: 100%; background: var(--bg); font-family: var(--font); over
 .mrow { display: flex; margin-bottom: 2px; align-items: flex-end; gap: 6px; }
 .mrow.sent { justify-content: flex-end; }
 .mrow.recv { justify-content: flex-start; }
-.mrow.gstart { margin-top: 6px; }
+.mrow.gstart { margin-top: 14px; }
 
 .bubble {
   max-width: 440px; min-width: 64px;
@@ -385,7 +385,7 @@ html, body { height: 100%; background: var(--bg); font-family: var(--font); over
 /* Reactions */
 .bubble-pos { position: relative; }
 .reaction-bar {
-  position: absolute; bottom: 100%; right: 0; margin-bottom: 6px;
+  position: absolute; bottom: 100%; right: 0; margin-bottom: 0;
   background: #fff; border: 1px solid var(--border); border-radius: 24px;
   padding: 4px 8px; display: none; gap: 4px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 10; white-space: nowrap;
@@ -394,7 +394,7 @@ html, body { height: 100%; background: var(--bg); font-family: var(--font); over
 .rbtn { font-size: 22px; cursor: pointer; padding: 2px 3px; border-radius: 8px; transition: transform 0.15s; }
 .rbtn:hover { transform: scale(1.25); }
 .reaction-badge {
-  position: absolute; bottom: -10px; right: 6px;
+  position: absolute; bottom: -16px; right: 6px;
   background: #fff; border: 1px solid var(--border); border-radius: 12px;
   padding: 1px 5px; font-size: 12px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.1);
