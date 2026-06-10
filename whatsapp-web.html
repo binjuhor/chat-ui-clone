@@ -146,6 +146,15 @@
     background: #182229; color: var(--text-secondary); font-size: 12.5px;
     padding: 5px 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.3);
   }
+  .system-event {
+    display: flex; justify-content: center; margin: 6px 0;
+  }
+  .system-event-chip {
+    background: #182229; color: var(--text-secondary); font-size: 12.5px;
+    padding: 5px 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+    display: flex; align-items: center; gap: 5px; max-width: 75%; text-align: center;
+  }
+  .system-event-chip svg { flex-shrink: 0; opacity: .75; }
   .msg-row { display: flex; margin: 1px 0; }
   .msg-row.sent { justify-content: flex-end; }
   .msg-row.recv { justify-content: flex-start; }
@@ -810,8 +819,10 @@ const chats = [
       {id:4,from:'them',sender:'Marcus R',text:"On it. Should have a fix in 30 mins",time:hm(9,18)},
       {id:5,from:'me',text:"All tests passing on my end ✅",time:hm(9,45),read:true},
       {id:6,from:'them',sender:'Alex Chen',text:"Great! Priya can you QA the fix once Marcus pushes?",time:hm(10,0)},
-      {id:7,from:'them',sender:'Priya K',text:"Already on it!",time:hm(10,2)},
-      {id:8,from:'them',sender:'Marcus R',text:"PR is ready for review",time:hm(now.getHours(),now.getMinutes()-18)},
+      {id:7,type:'pin',from:'them',sender:'Alex Chen',time:hm(10,1)},
+      {id:8,from:'them',sender:'Priya K',text:"Already on it!",time:hm(10,2)},
+      {id:9,type:'pin',from:'me',time:hm(10,30),read:true},
+      {id:10,from:'them',sender:'Marcus R',text:"PR is ready for review",time:hm(now.getHours(),now.getMinutes()-18)},
     ]
   },
   {
@@ -949,7 +960,7 @@ let mutedChats=new Set();
 function renderChatList() {
   const list=document.getElementById('chat-list');
   let items=[...chats];
-  if(searchQ) items=items.filter(c=>c.name.toLowerCase().includes(searchQ.toLowerCase())||c.messages.some(m=>m.text.toLowerCase().includes(searchQ.toLowerCase())));
+  if(searchQ) items=items.filter(c=>c.name.toLowerCase().includes(searchQ.toLowerCase())||c.messages.some(m=>m.text&&m.text.toLowerCase().includes(searchQ.toLowerCase())));
   if(filter==='unread')    items=items.filter(c=>c.unread>0);
   if(filter==='favorites') items=items.filter(c=>c.favorite);
   if(filter==='groups')    items=items.filter(c=>c.group);
@@ -972,6 +983,10 @@ function renderChatList() {
       const missed=last.status==='missed';
       const vt=last.callType==='video';
       previewHtml=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${missed?'#f15c6d':'currentColor'}" stroke-width="2" style="flex-shrink:0">${vt?'<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>':'<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/>'}</svg> <span style="color:${missed?'#f15c6d':'inherit'}">${missed?'Missed ':''}${vt?'Video':'Voice'} call</span>`;
+    }
+    if(last.type==='pin') {
+      const who = last.from==='me' ? 'You' : (last.sender || chat.name);
+      previewHtml=`📌 ${who} pinned a message`;
     }
     return `<div class="chat-item${sel?' selected':''}${chat.unread>0?' unread':''}" onclick="openChat(${chat.id})">
       <div class="avatar-wrap">
@@ -1161,6 +1176,13 @@ function renderMessages() {
     const m=item.m;
     const side=m.from==='me'?'sent':'recv';
     const snd=m.sender?`<div style="color:${color(m.sender)};font-size:13px;font-weight:600;margin-bottom:3px">${m.sender}</div>`:'';
+
+    // System event: pinned message
+    if(m.type==='pin') {
+      const pinIcon=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V6h1a2 2 0 000-4H8a2 2 0 000 4h1v4.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24z"/></svg>`;
+      const who = m.from==='me' ? 'You' : (m.sender || 'Someone');
+      return `<div class="system-event"><div class="system-event-chip">${pinIcon}${escHtml(who)} pinned a message</div></div>`;
+    }
 
     // Special bubble types
     if(m.type==='call') {
